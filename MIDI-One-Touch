@@ -1,0 +1,42 @@
+import time
+import board
+import touchio
+import usb_midi
+import adafruit_midi
+from adafruit_midi.note_on import NoteOn
+from adafruit_midi.note_off import NoteOff
+
+# Capacitive touch setup
+THRESHOLD = 10
+
+# Define the touch pins
+touch_pins = [board.GP11, board.GP12, board.GP13, board.GP14, board.GP15, board.GP10, board.GP9, board.GP8, board.GP7, board.GP6, board.GP5, board.GP4, board.GP3, board.GP2, board.GP1, board.GP0, board.GP16, board.GP17, board.GP18, board.GP19, board.GP20, board.GP21, board.GP22, board.GP26, board.GP27, board.GP28]
+
+# Initialize touch sensors
+touch_sensors = [touchio.TouchIn(pin) for pin in touch_pins]
+
+# MIDI setup
+midi = adafruit_midi.MIDI(midi_out=usb_midi.ports[1], out_channel=0)
+
+# MIDI note numbers corresponding to each touch pin
+midi_notes = [60, 62, 64, 67, 69, 70, 71, 72, 74, 77, 78, 79, 82, 83, 85, 86, 87, 88, 89, 90, 92, 93, 94, 95, 96, 97]  # Example notes, adjust as needed
+
+# State variables to track if a note has been played for each touch pin
+note_played = [False] * len(touch_pins)
+
+# Main loop
+while True:
+    for i, touch_sensor in enumerate(touch_sensors):
+        # Capacitive touch sensing
+        if touch_sensor.value:
+            # Check if the note has already been played
+            if not note_played[i]:
+                # Send MIDI note on message when touch is detected
+                midi.send(NoteOn(midi_notes[i], 120))
+                note_played[i] = True  # Update state variable
+        else:
+            # Check if the note has been played and turn it off
+            if note_played[i]:
+                # Send MIDI note off message when touch is released
+                midi.send(NoteOff(midi_notes[i], 120))
+                note_played[i] = False  # Update state variable
