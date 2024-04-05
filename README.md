@@ -12,4 +12,6 @@ On your CIRCUITPY device there is a folder that says lib. You will need to just 
 
 For USB MIDI you will need the folder that says adafruit_midi.
 
-For the Keyboard emulator you will need the folder that says adafruit_hid and also two other files called adafruit_debouncer and adafruit_ticks
+For the Keyboard emulator you will need the folder that says adafruit_hid.
+
+It is fine to have both libraries in the lib folder at the same time.
