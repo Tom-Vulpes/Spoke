@@ -1,4 +1,4 @@
-The Pico-Cap-26 is a capacative touch board htat uses all 26 GPIO pins of the raspberry pi pico.
+The SPOKE is a 26 pin capacative touch board using the Raspberry Pi Pico microcontroller.
 
 The board is able to do lots of things and can be adapted to your own needs.
 
