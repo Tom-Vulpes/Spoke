@@ -1,3 +1,5 @@
+# This is the code for running a sequence of notes per pin. In the Main Loop (line 66) you can change the time between notes. 
+
 import time
 import board
 import touchio
@@ -18,36 +20,36 @@ touch_sensors = [touchio.TouchIn(pin) for pin in touch_pins]
 # MIDI setup
 midi = adafruit_midi.MIDI(midi_out=usb_midi.ports[1], out_channel=0)
 
-# Arpeggio configuration for each pin (6-note arpeggios starting from a lower octave)
+# Arpeggio configuration for each pin (up 4 notes and then down 4 notes)
 arpeggios = [
-    [48, 52, 55, 59, 62, 65],  # C major chord
-    [50, 53, 57, 60, 64, 67],  # D minor chord
-    [52, 55, 59, 62, 65, 69],  # E minor chord
-    [53, 57, 60, 64, 67, 71],  # F major chord
-    [55, 59, 62, 65, 69, 72],  # G major chord
-    [57, 60, 64, 67, 71, 74],  # A minor chord
-    [59, 62, 65, 69, 72, 76],  # B diminished chord
-    [60, 64, 67, 71, 74, 77],  # C major chord
-    [62, 65, 69, 72, 76, 79],  # D minor chord
-    [64, 67, 71, 74, 77, 81],  # E minor chord
-    [65, 69, 72, 76, 79, 83],  # F major chord
-    [67, 71, 74, 77, 81, 84],  # G major chord
-    [69, 72, 76, 79, 83, 86],  # A minor chord
-    [71, 74, 77, 81, 84, 88],  # B diminished chord
-    [72, 76, 79, 83, 86, 89],  # C major chord
-    [74, 77, 81, 84, 88, 91],  # D minor chord
-    [76, 79, 83, 86, 89, 93],  # E minor chord
-    [77, 81, 84, 88, 91, 95],  # F major chord
-    [79, 83, 86, 89, 93, 96],  # G major chord
-    [81, 84, 88, 91, 95, 98],  # A minor chord
-    [83, 86, 89, 93, 96, 100],  # B diminished chord
-    [84, 88, 91, 95, 98, 101],  # C major chord
-    [86, 89, 93, 96, 100, 103], # D minor chord
-    [88, 91, 95, 98, 101, 105], # E minor chord
-    [89, 93, 96, 100, 103, 107], # F major chord
-    [91, 95, 98, 101, 105, 108], # G major chord
-    [93, 96, 100, 103, 107, 110], # A minor chord
-    [95, 98, 101, 105, 108, 112] # B diminished chord
+    [48, 52, 55, 59, 62, 65, 62, 59],  # C major chord
+    [50, 53, 57, 60, 64, 67, 64, 60],  # D minor chord
+    [52, 55, 59, 62, 65, 69, 65, 62],  # E minor chord
+    [53, 57, 60, 64, 67, 71, 67, 64],  # F major chord
+    [55, 59, 62, 65, 69, 72, 69, 65],  # G major chord
+    [57, 60, 64, 67, 71, 74, 71, 67],  # A minor chord
+    [59, 62, 65, 69, 72, 76, 72, 69],  # B diminished chord
+    [60, 64, 67, 71, 74, 77, 74, 71],  # C major chord
+    [62, 65, 69, 72, 76, 79, 76, 72],  # D minor chord
+    [64, 67, 71, 74, 77, 81, 77, 74],  # E minor chord
+    [65, 69, 72, 76, 79, 83, 79, 76],  # F major chord
+    [67, 71, 74, 77, 81, 84, 81, 77],  # G major chord
+    [69, 72, 76, 79, 83, 86, 83, 79],  # A minor chord
+    [71, 74, 77, 81, 84, 88, 84, 81],  # B diminished chord
+    [72, 76, 79, 83, 86, 89, 86, 83],  # C major chord
+    [74, 77, 81, 84, 88, 91, 88, 84],  # D minor chord
+    [76, 79, 83, 86, 89, 93, 89, 86],  # E minor chord
+    [77, 81, 84, 88, 91, 95, 91, 88],  # F major chord
+    [79, 83, 86, 89, 93, 96, 93, 89],  # G major chord
+    [81, 84, 88, 91, 95, 98, 95, 91],  # A minor chord
+    [83, 86, 89, 93, 96, 100, 96, 93],  # B diminished chord
+    [84, 88, 91, 95, 98, 101, 98, 95],  # C major chord
+    [86, 89, 93, 96, 100, 103, 100, 96], # D minor chord
+    [88, 91, 95, 98, 101, 105, 101, 98], # E minor chord
+    [89, 93, 96, 100, 103, 107, 103, 100], # F major chord
+    [91, 95, 98, 101, 105, 108, 105, 101], # G major chord
+    [93, 96, 100, 103, 107, 110, 107, 103], # A minor chord
+    [95, 98, 101, 105, 108, 112, 108, 105] # B diminished chord
 ]
 
 # Main loop
@@ -66,3 +68,4 @@ while True:
             # Stop playing the arpeggio
             for note in arpeggio:
                 midi.send(NoteOff(note, 0))
+
