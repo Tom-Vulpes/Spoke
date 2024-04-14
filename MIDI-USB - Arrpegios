@@ -1,0 +1,68 @@
+import time
+import board
+import touchio
+import usb_midi
+import adafruit_midi
+from adafruit_midi.note_on import NoteOn
+from adafruit_midi.note_off import NoteOff
+
+# Capacitive touch setup
+THRESHOLD = 100
+
+# Define the touch pins in ascending order
+touch_pins = [board.GP0, board.GP1, board.GP2, board.GP3, board.GP4, board.GP5, board.GP6, board.GP7, board.GP8, board.GP9, board.GP10, board.GP11, board.GP12, board.GP13, board.GP14, board.GP15, board.GP16, board.GP17, board.GP18, board.GP19, board.GP20, board.GP21, board.GP22, board.GP26, board.GP27, board.GP28]
+
+# Initialize touch sensors
+touch_sensors = [touchio.TouchIn(pin) for pin in touch_pins]
+
+# MIDI setup
+midi = adafruit_midi.MIDI(midi_out=usb_midi.ports[1], out_channel=0)
+
+# Arpeggio configuration for each pin (6-note arpeggios starting from a lower octave)
+arpeggios = [
+    [48, 52, 55, 59, 62, 65],  # C major chord
+    [50, 53, 57, 60, 64, 67],  # D minor chord
+    [52, 55, 59, 62, 65, 69],  # E minor chord
+    [53, 57, 60, 64, 67, 71],  # F major chord
+    [55, 59, 62, 65, 69, 72],  # G major chord
+    [57, 60, 64, 67, 71, 74],  # A minor chord
+    [59, 62, 65, 69, 72, 76],  # B diminished chord
+    [60, 64, 67, 71, 74, 77],  # C major chord
+    [62, 65, 69, 72, 76, 79],  # D minor chord
+    [64, 67, 71, 74, 77, 81],  # E minor chord
+    [65, 69, 72, 76, 79, 83],  # F major chord
+    [67, 71, 74, 77, 81, 84],  # G major chord
+    [69, 72, 76, 79, 83, 86],  # A minor chord
+    [71, 74, 77, 81, 84, 88],  # B diminished chord
+    [72, 76, 79, 83, 86, 89],  # C major chord
+    [74, 77, 81, 84, 88, 91],  # D minor chord
+    [76, 79, 83, 86, 89, 93],  # E minor chord
+    [77, 81, 84, 88, 91, 95],  # F major chord
+    [79, 83, 86, 89, 93, 96],  # G major chord
+    [81, 84, 88, 91, 95, 98],  # A minor chord
+    [83, 86, 89, 93, 96, 100],  # B diminished chord
+    [84, 88, 91, 95, 98, 101],  # C major chord
+    [86, 89, 93, 96, 100, 103], # D minor chord
+    [88, 91, 95, 98, 101, 105], # E minor chord
+    [89, 93, 96, 100, 103, 107], # F major chord
+    [91, 95, 98, 101, 105, 108], # G major chord
+    [93, 96, 100, 103, 107, 110], # A minor chord
+    [95, 98, 101, 105, 108, 112] # B diminished chord
+]
+
+# Main loop
+while True:
+    # Check each touch sensor
+    for i, sensor in enumerate(touch_sensors):
+        # If the capacitive touch is activated
+        if sensor.value:
+            print("Touch detected on pin", i)
+            # Play the arpeggiated sequence corresponding to the pin
+            arpeggio = arpeggios[i]
+            for note in arpeggio:
+                midi.send(NoteOn(note, 120))
+                time.sleep(0.2)  # Delay between each note in the arpeggio
+            time.sleep(0.5)  # Duration of the arpeggio
+            # Stop playing the arpeggio
+            for note in arpeggio:
+                midi.send(NoteOff(note, 0))
