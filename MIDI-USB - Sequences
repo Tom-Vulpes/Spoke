@@ -20,7 +20,7 @@ touch_sensors = [touchio.TouchIn(pin) for pin in touch_pins]
 # MIDI setup
 midi = adafruit_midi.MIDI(midi_out=usb_midi.ports[1], out_channel=0)
 
-# Arpeggio configuration for each pin (up 4 notes and then down 4 notes)
+# Sequence configuration for each pin (up 4 notes and then down 4 notes)
 arpeggios = [
     [48, 52, 55, 59, 62, 65, 62, 59],  # C major chord
     [50, 53, 57, 60, 64, 67, 64, 60],  # D minor chord
@@ -59,7 +59,7 @@ while True:
         # If the capacitive touch is activated
         if sensor.value:
             print("Touch detected on pin", i)
-            # Play the arpeggiated sequence corresponding to the pin
+            # Play the sequence corresponding to the pin
             arpeggio = arpeggios[i]
             for note in arpeggio:
                 midi.send(NoteOn(note, 120))
