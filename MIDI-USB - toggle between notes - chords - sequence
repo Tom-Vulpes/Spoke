@@ -1,3 +1,5 @@
+#GP0 toggles between modes
+
 import time
 import board
 import touchio
