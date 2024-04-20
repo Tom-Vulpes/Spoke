@@ -1,0 +1,40 @@
+import time
+import board
+import touchio
+import usb_hid
+from adafruit_hid.mouse import Mouse
+from adafruit_hid.mouse import Mouse
+
+mouse = Mouse(usb_hid.devices)
+
+# Define the touch pins
+touch_pins = [board.GP0, board.GP3, board.GP18, board.GP22, board.GP26, board.GP27]
+
+# Initialize touch sensors
+touch_sensors = [touchio.TouchIn(pin) for pin in touch_pins]
+
+# Mouse movement configuration
+MOUSE_MOVEMENT = 2  # Change this value to adjust mouse movement speed
+
+# Main loop
+while True:
+    # Check each touch sensor
+    for i, sensor in enumerate(touch_sensors):
+        # If the capacitive touch is activated
+        if sensor.value:
+            # Check which touch pin is activated
+            if i == 0:  # GP0
+                mouse.move(x=MOUSE_MOVEMENT, y=0)  # Move mouse to the right
+            elif i == 1:  # GP3
+                mouse.move(x=-MOUSE_MOVEMENT, y=0)  # Move mouse to the left
+            elif i == 2:  # GP18
+                mouse.move(x=0, y=-MOUSE_MOVEMENT)  # Move mouse upwards
+            elif i == 3:  # GP22
+                mouse.move(x=0, y=MOUSE_MOVEMENT)  # Move mouse downwards
+            elif i == 4:  # GP26
+                mouse.click(Mouse.LEFT_BUTTON)  # Perform a left mouse click
+            elif i == 5:  # GP27
+                mouse.click(Mouse.RIGHT_BUTTON)  # Perform a left mouse click
+            # Add a small delay to debounce
+            time.sleep(0.1)
+
