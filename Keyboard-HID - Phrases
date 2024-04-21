@@ -1,0 +1,99 @@
+import time
+import board
+import touchio
+import usb_hid
+from adafruit_hid.keyboard import Keyboard
+from adafruit_hid.keycode import Keycode
+
+kpd = Keyboard(usb_hid.devices)
+
+# Define the touch pins
+touch_pins = [
+    board.GP0, board.GP1, board.GP2, board.GP3, board.GP4, board.GP5,
+    board.GP6, board.GP7, board.GP8, board.GP9, board.GP10, board.GP11,
+    board.GP12, board.GP13, board.GP14, board.GP15, board.GP16, board.GP17,
+    board.GP18, board.GP19, board.GP20, board.GP21, board.GP22, board.GP26,
+    board.GP27, board.GP28
+]
+
+# Initialize touch sensors
+touch_sensors = [touchio.TouchIn(pin) for pin in touch_pins]
+
+# Phrases configuration
+PHRASES = [
+    "Aello ",
+    "world ",
+    "sausages ",
+    "keyboard ",
+    "crouch ",
+    "bananaaa ",
+    "carpet shaving ",
+    "along the river ",
+    "slides ",
+    "behind a ",
+    "driven  ",
+    "crab ",
+    "lobster ",
+    "tickled by a ",
+    "harmonious ",
+    "spleen ",
+    "before becoming ",
+    "entranced by a ",
+    "thy ",
+    "corn-fed cattle ",
+    "space jam ",
+    "before the final sounds of a ",
+    "firework ",
+    "double ",
+    "shifting ",
+    "twee ",
+]
+
+# Define Keycodes for each alphabet character
+ALPHABET_KEYCODES = {
+    "a": Keycode.A,
+    "b": Keycode.B,
+    "c": Keycode.C,
+    "d": Keycode.D,
+    "e": Keycode.E,
+    "f": Keycode.F,
+    "g": Keycode.G,
+    "h": Keycode.H,
+    "i": Keycode.I,
+    "j": Keycode.J,
+    "k": Keycode.K,
+    "l": Keycode.L,
+    "m": Keycode.M,
+    "n": Keycode.N,
+    "o": Keycode.O,
+    "p": Keycode.P,
+    "q": Keycode.Q,
+    "r": Keycode.R,
+    "s": Keycode.S,
+    "t": Keycode.T,
+    "u": Keycode.U,
+    "v": Keycode.V,
+    "w": Keycode.W,
+    "x": Keycode.X,
+    "y": Keycode.Y,
+    "z": Keycode.Z,
+    " ": Keycode.SPACE,
+}
+
+# Main loop
+while True:
+    # Check each touch sensor
+    for i, sensor in enumerate(touch_sensors):
+        # If the capacitive touch is activated
+        if sensor.value:
+            print(f"Key pressed: {chr(ord('A') + i)}")
+            # Get the phrase corresponding to the pin
+            phrase = PHRASES[i]
+            print(phrase)
+            # Simulate typing the phrase
+            for char in phrase.lower():  # Convert phrase to lowercase
+                if char in ALPHABET_KEYCODES:  # Check if character is in ALPHABET_KEYCODES
+                    kpd.press(ALPHABET_KEYCODES[char])  # Press the corresponding Keycode
+                    kpd.release_all()  # Release all keys
+                    time.sleep(0.1)  # Adjust delay as needed
+            time.sleep(0.5)  # Add a small delay between phrases
