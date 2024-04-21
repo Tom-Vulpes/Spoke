@@ -21,13 +21,13 @@ touch_sensors = [touchio.TouchIn(pin) for pin in touch_pins]
 
 # Phrases configuration
 PHRASES = [
-    "Aello ",
+    "hello ",
     "world ",
     "sausages ",
     "keyboard ",
     "crouch ",
     "bananaaa ",
-    "carpet shaving ",
+    "above the  ",
     "along the river ",
     "slides ",
     "behind a ",
