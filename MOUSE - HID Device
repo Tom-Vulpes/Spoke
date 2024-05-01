@@ -8,13 +8,13 @@ from adafruit_hid.mouse import Mouse
 mouse = Mouse(usb_hid.devices)
 
 # Define the touch pins
-touch_pins = [board.GP0, board.GP3, board.GP18, board.GP22, board.GP26, board.GP27]
+touch_pins = [board.GP0, board.GP1, board.GP2, board.GP3, board.GP4, board.GP5]
 
 # Initialize touch sensors
 touch_sensors = [touchio.TouchIn(pin) for pin in touch_pins]
 
 # Mouse movement configuration
-MOUSE_MOVEMENT = 2  # Change this value to adjust mouse movement speed
+MOUSE_MOVEMENT = 10  # Change this value to adjust mouse movement speed
 
 # Main loop
 while True:
@@ -25,15 +25,15 @@ while True:
             # Check which touch pin is activated
             if i == 0:  # GP0
                 mouse.move(x=MOUSE_MOVEMENT, y=0)  # Move mouse to the right
-            elif i == 1:  # GP3
+            elif i == 1:  # GP1
                 mouse.move(x=-MOUSE_MOVEMENT, y=0)  # Move mouse to the left
-            elif i == 2:  # GP18
+            elif i == 2:  # GP2
                 mouse.move(x=0, y=-MOUSE_MOVEMENT)  # Move mouse upwards
-            elif i == 3:  # GP22
+            elif i == 3:  # GP3
                 mouse.move(x=0, y=MOUSE_MOVEMENT)  # Move mouse downwards
-            elif i == 4:  # GP26
+            elif i == 4:  # G4
                 mouse.click(Mouse.LEFT_BUTTON)  # Perform a left mouse click
-            elif i == 5:  # GP27
+            elif i == 5:  # GP5
                 mouse.click(Mouse.RIGHT_BUTTON)  # Perform a left mouse click
             # Add a small delay to debounce
             time.sleep(0.1)
