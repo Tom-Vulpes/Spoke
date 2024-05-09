@@ -11,8 +11,13 @@ from adafruit_midi.note_off import NoteOff
 # Define the touch pins
 touch_pins = [board.GP0, board.GP1, board.GP2, board.GP3, board.GP4, board.GP5, board.GP6, board.GP7, board.GP8, board.GP9, board.GP10, board.GP11, board.GP12, board.GP13, board.GP14, board.GP15, board.GP16, board.GP17, board.GP18, board.GP19, board.GP20, board.GP21, board.GP22, board.GP26, board.GP27, board.GP28]
 
-# Initialize touch sensors
-touch_sensors = [touchio.TouchIn(pin) for pin in touch_pins]
+touch_sensors = []
+for pin in touch_pins:
+    try:
+        touch_sensors.append(touchio.TouchIn(pin))
+    except ValueError:
+        print(f"No pulldown resistor found on pin {pin}, skipping...")
+
 
 # MIDI setup - If you want to assign the midi device to a specific channel or port then just change the values in this line.
 midi = adafruit_midi.MIDI(midi_out=usb_midi.ports[1], out_channel=0)
