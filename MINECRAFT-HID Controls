@@ -22,9 +22,19 @@ touch_pins_mouse = [
 ]
 
 # Initialize touch sensors for keyboard and mouse controls
-touch_sensors_keyboard = [touchio.TouchIn(pin) for pin in touch_pins_keyboard]
-touch_sensors_mouse = [touchio.TouchIn(pin) for pin in touch_pins_mouse]
+touch_sensors_keyboard = []
+for pin in touch_pins_keyboard:
+    try:
+        touch_sensors_keyboard.append(touchio.TouchIn(pin))
+    except ValueError:
+        print(f"No pulldown resistor found on pin {pin}, skipping...")
 
+touch_sensors_mouse = []
+for pin in touch_pins_mouse:
+    try:
+        touch_sensors_mouse.append(touchio.TouchIn(pin))
+    except ValueError:
+        print(f"No pulldown resistor found on pin {pin}, skipping...")
 # Keymap configuration for Minecraft controls
 KEYMAP_MINECRAFT = (
     ("Forward", [Keycode.W]),      # Move forward
