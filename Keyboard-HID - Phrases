@@ -17,7 +17,13 @@ touch_pins = [
 ]
 
 # Initialize touch sensors
-touch_sensors = [touchio.TouchIn(pin) for pin in touch_pins]
+touch_sensors = []
+for pin in touch_pins:
+    try:
+        touch_sensors.append(touchio.TouchIn(pin))
+    except ValueError:
+        print(f"No pulldown resistor found on pin {pin}, skipping...")
+
 
 # Phrases configuration
 PHRASES = [
