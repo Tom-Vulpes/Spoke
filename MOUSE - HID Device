@@ -11,7 +11,12 @@ mouse = Mouse(usb_hid.devices)
 touch_pins = [board.GP0, board.GP1, board.GP2, board.GP3, board.GP4, board.GP5]
 
 # Initialize touch sensors
-touch_sensors = [touchio.TouchIn(pin) for pin in touch_pins]
+touch_sensors_mouse = []
+for pin in touch_pins_mouse:
+    try:
+        touch_sensors_mouse.append(touchio.TouchIn(pin))
+    except ValueError:
+        print(f"No pulldown resistor found on pin {pin}, skipping...")
 
 # Mouse movement configuration
 MOUSE_MOVEMENT = 10  # Change this value to adjust mouse movement speed
@@ -34,7 +39,7 @@ while True:
             elif i == 4:  # G4
                 mouse.click(Mouse.LEFT_BUTTON)  # Perform a left mouse click
             elif i == 5:  # GP5
-                mouse.click(Mouse.RIGHT_BUTTON)  # Perform a left mouse click
+                mouse.click(Mouse.RIGHT_BUTTON)  # Perform a right mouse click
             # Add a small delay to debounce
             time.sleep(0.1)
 
