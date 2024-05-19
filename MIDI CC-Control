@@ -1,0 +1,81 @@
+# This code allows you to send specific CC values on specific channels when a pin is touched. 
+# You can specify what values to send when it's not being touched and when it's being touched by editing the values in cc_value_on and cc_value_off 
+
+import time
+import board
+import touchio
+import usb_midi
+import adafruit_midi
+from adafruit_midi.control_change import ControlChange
+
+# Define the touch pins and corresponding MIDI CC settings
+touch_pins = [
+    {"pin": board.GP0, "cc_channel": 0, "cc_value_on": 50, "cc_value_off": 0},
+    {"pin": board.GP1, "cc_channel": 1, "cc_value_on": 60, "cc_value_off": 0},
+    {"pin": board.GP2, "cc_channel": 2, "cc_value_on": 70, "cc_value_off": 0},
+    {"pin": board.GP3, "cc_channel": 3, "cc_value_on": 80, "cc_value_off": 0},
+    {"pin": board.GP4, "cc_channel": 4, "cc_value_on": 90, "cc_value_off": 0},
+    {"pin": board.GP5, "cc_channel": 5, "cc_value_on": 100, "cc_value_off": 0},
+    {"pin": board.GP6, "cc_channel": 6, "cc_value_on": 110, "cc_value_off": 0},
+    {"pin": board.GP7, "cc_channel": 7, "cc_value_on": 120, "cc_value_off": 0},
+    {"pin": board.GP8, "cc_channel": 8, "cc_value_on": 127, "cc_value_off": 0},
+    {"pin": board.GP9, "cc_channel": 9, "cc_value_on": 30, "cc_value_off": 0},
+    {"pin": board.GP10, "cc_channel": 10, "cc_value_on": 40, "cc_value_off": 0},
+    {"pin": board.GP11, "cc_channel": 11, "cc_value_on": 50, "cc_value_off": 0},
+    {"pin": board.GP12, "cc_channel": 12, "cc_value_on": 60, "cc_value_off": 0},
+    {"pin": board.GP13, "cc_channel": 13, "cc_value_on": 70, "cc_value_off": 0},
+    {"pin": board.GP14, "cc_channel": 14, "cc_value_on": 80, "cc_value_off": 0},
+    {"pin": board.GP15, "cc_channel": 15, "cc_value_on": 90, "cc_value_off": 0},
+    {"pin": board.GP16, "cc_channel": 16, "cc_value_on": 100, "cc_value_off": 0},
+    {"pin": board.GP17, "cc_channel": 17, "cc_value_on": 110, "cc_value_off": 0},
+    {"pin": board.GP18, "cc_channel": 18, "cc_value_on": 120, "cc_value_off": 0},
+    {"pin": board.GP19, "cc_channel": 19, "cc_value_on": 127, "cc_value_off": 0},
+    {"pin": board.GP20, "cc_channel": 20, "cc_value_on": 30, "cc_value_off": 0},
+    {"pin": board.GP21, "cc_channel": 21, "cc_value_on": 40, "cc_value_off": 0},
+    {"pin": board.GP22, "cc_channel": 22, "cc_value_on": 50, "cc_value_off": 0},
+    {"pin": board.GP26, "cc_channel": 23, "cc_value_on": 60, "cc_value_off": 0},
+    {"pin": board.GP27, "cc_channel": 24, "cc_value_on": 70, "cc_value_off": 0},
+    {"pin": board.GP28, "cc_channel": 25, "cc_value_on": 80, "cc_value_off": 0},
+]
+
+# Initialize touch sensors and MIDI
+touch_sensors = []
+for pin_config in touch_pins:
+    try:
+        touch_sensors.append({
+            "sensor": touchio.TouchIn(pin_config["pin"]),
+            "cc_channel": pin_config["cc_channel"],
+            "cc_value_on": pin_config["cc_value_on"],
+            "cc_value_off": pin_config["cc_value_off"],
+            "previous_state": False  # Track the previous state of each sensor
+        })
+    except ValueError:
+        print(f"No pulldown resistor found on pin {pin_config['pin']}, skipping...")
+
+# MIDI setup
+midi = adafruit_midi.MIDI(midi_out=usb_midi.ports[1], out_channel=0)
+
+# Main loop
+while True:
+    for sensor_config in touch_sensors:
+        sensor = sensor_config["sensor"]
+        cc_channel = sensor_config["cc_channel"]
+        cc_value_on = sensor_config["cc_value_on"]
+        cc_value_off = sensor_config["cc_value_off"]
+        previous_state = sensor_config["previous_state"]
+        
+        current_state = sensor.value
+        
+        if current_state and not previous_state:
+            # Send CC value on when touched
+            midi.send(ControlChange(cc_channel, cc_value_on))
+        elif not current_state and previous_state:
+            # Send CC value off when not touched
+            midi.send(ControlChange(cc_channel, cc_value_off))
+
+        
+        # Update the previous state
+        sensor_config["previous_state"] = current_state
+    
+    time.sleep(0.1)  # Adjust delay as needed
+
