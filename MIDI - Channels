@@ -1,0 +1,88 @@
+#This code allows you to select which pin plays which note on which channel. Edit the values from line 31 onwards to your desired setup.
+
+import time
+import board
+import touchio
+import usb_midi
+import adafruit_midi
+from adafruit_midi.note_on import NoteOn
+from adafruit_midi.note_off import NoteOff
+
+# Define the touch pins
+touch_pins = [
+    board.GP0, board.GP1, board.GP2, board.GP3, board.GP4, board.GP5,
+    board.GP6, board.GP7, board.GP8, board.GP9, board.GP10, board.GP11,
+    board.GP12, board.GP13, board.GP14, board.GP15, board.GP16, board.GP17,
+    board.GP18, board.GP19, board.GP20, board.GP21, board.GP22, board.GP26,
+    board.GP27, board.GP28
+]
+
+# Initialize touch sensors
+touch_sensors = []
+for pin in touch_pins:
+    try:
+        touch_sensors.append(touchio.TouchIn(pin))
+    except ValueError:
+        print(f"No pulldown resistor found on pin {pin}, skipping...")
+
+# MIDI setup
+midi_out = adafruit_midi.MIDI(midi_out=usb_midi.ports[1])
+
+# MIDI note and channel configuration for each touch pin
+midi_configs = [
+    {"note": 30, "channel": 1}, #gp0
+    {"note": 32, "channel": 2}, #gp1
+    {"note": 34, "channel": 3}, #gp2
+    {"note": 35, "channel": 4}, #gp3
+    {"note": 37, "channel": 5}, #gp4
+    {"note": 39, "channel": 6}, #gp5
+    {"note": 41, "channel": 7}, #gp6
+    {"note": 42, "channel": 8}, #gp7
+    {"note": 44, "channel": 9}, #gp8
+    {"note": 46, "channel": 10}, #gp9
+    {"note": 47, "channel": 11}, #gp10
+    {"note": 49, "channel": 12}, #gp11
+    {"note": 51, "channel": 13}, #gp12
+    {"note": 53, "channel": 14}, #gp13
+    {"note": 54, "channel": 15}, #gp14
+    {"note": 56, "channel": 16}, #gp15
+    {"note": 58, "channel": 1}, #gp16
+    {"note": 59, "channel": 2}, #gp17
+    {"note": 61, "channel": 3}, #gp18
+    {"note": 63, "channel": 4}, #gp19
+    {"note": 65, "channel": 5}, #gp20
+    {"note": 66, "channel": 6}, #gp21
+    {"note": 68, "channel": 7}, #gp22
+    {"note": 70, "channel": 8}, #gp26
+    {"note": 71, "channel": 9}, #gp27
+    {"note": 73, "channel": 10} #gp28
+]
+
+# State variables to track if a note has been played for each touch pin
+note_played = [False] * len(touch_pins)
+
+# Main loop
+while True:
+    for i, touch_sensor in enumerate(touch_sensors):
+        # Capacitive touch sensing
+        if touch_sensor.value:
+            # Check if the note has already been played
+            if not note_played[i]:
+                # Send MIDI note on message when touch is detected
+                note = midi_configs[i]["note"]
+                channel = midi_configs[i]["channel"] - 1  # Adjust for 0-based indexing
+                midi_out.send(NoteOn(note, 120), channel=channel)
+                print(f"Pin {i} touched. Sending NoteOn {note} on Channel {channel + 1}")
+                note_played[i] = True  # Update state variable
+        else:
+            # Check if the note has been played and turn it off
+            if note_played[i]:
+                # Send MIDI note off message when touch is released
+                note = midi_configs[i]["note"]
+                channel = midi_configs[i]["channel"] - 1  # Adjust for 0-based indexing
+                midi_out.send(NoteOff(note, 120), channel=channel)
+                print(f"Pin {i} released. Sending NoteOff {note} on Channel {channel + 1}")
+                note_played[i] = False  # Update state variable
+
+    time.sleep(0.01)  # Small delay to prevent overwhelming the loop
+
