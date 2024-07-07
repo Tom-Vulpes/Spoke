@@ -1,3 +1,5 @@
+![SPOKELOGO](https://github.com/Tom-Vulpes/Spoke/assets/165816078/3fd4bdc1-7e99-401a-b058-55a4bf390c39)
+
 SPOKE is a 26 pin capacative touch board using the Raspberry Pi Pico microcontroller.
 
 The board is able to do lots of things and can be adapted to your own needs.
@@ -15,3 +17,4 @@ For USB MIDI you will need the folder that says adafruit_midi.
 For the Keyboard emulator you will need the folder that says adafruit_hid.
 
 It is fine to have both libraries in the lib folder at the same time.
+
