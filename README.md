@@ -1,5 +1,5 @@
 
-<img src="[https://your-image-url.type](https://github.com/Tom-Vulpes/Spoke/assets/165816078/3fd4bdc1-7e99-401a-b058-55a4bf390c39.png)" width="100" height="100"> 
+<img src="https://github.com/Tom-Vulpes/Spoke/assets/165816078/3fd4bdc1-7e99-401a-b058-55a4bf390c39.png" width="100" height="100"> 
 
 SPOKE is a 26 pin capacative touch board using the Raspberry Pi Pico microcontroller.
 
