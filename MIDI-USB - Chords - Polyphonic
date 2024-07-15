@@ -1,0 +1,87 @@
+import time
+import board
+import touchio
+import usb_midi
+import adafruit_midi
+from adafruit_midi.note_on import NoteOn
+from adafruit_midi.note_off import NoteOff
+
+# Define the touch pins in ascending order
+touch_pins = [
+    board.GP0, board.GP1, board.GP2, board.GP3, board.GP4, board.GP5, board.GP6,
+    board.GP7, board.GP8, board.GP9, board.GP10, board.GP11, board.GP12, board.GP13,
+    board.GP14, board.GP15, board.GP16, board.GP17, board.GP18, board.GP19, board.GP20,
+    board.GP21, board.GP22, board.GP26, board.GP27, board.GP28
+]
+
+# Initialize touch sensors
+touch_sensors = []
+for pin in touch_pins:
+    try:
+        touch_sensors.append(touchio.TouchIn(pin))
+    except ValueError:
+        print(f"No pulldown resistor found on pin {pin}, skipping...")
+
+# MIDI setup
+midi = adafruit_midi.MIDI(midi_out=usb_midi.ports[1], out_channel=0)
+
+# Chord configuration for each pin
+chords = [
+    [60, 64, 67],  # C major chord
+    [62, 65, 69],  # D minor chord
+    [64, 67, 71],  # E minor chord
+    [65, 69, 72],  # F major chord
+    [67, 71, 74],  # G major chord
+    [69, 72, 76],  # A minor chord
+    [71, 74, 77],  # B diminished chord
+    [72, 76, 79],  # C major chord
+    [74, 77, 81],  # D minor chord
+    [76, 79, 83],  # E minor chord
+    [77, 81, 84],  # F major chord
+    [79, 83, 86],  # G major chord
+    [81, 84, 88],  # A minor chord
+    [83, 86, 89],  # B diminished chord
+    [84, 88, 91],  # C major chord
+    [86, 89, 93],  # D minor chord
+    [88, 91, 95],  # E minor chord
+    [89, 93, 96],  # F major chord
+    [91, 95, 98],  # G major chord
+    [93, 96, 100], # A minor chord
+    [95, 98, 101], # B diminished chord
+    [96, 100, 103], # C major chord
+    [98, 101, 105], # D minor chord
+    [100, 103, 107], # E minor chord
+    [101, 105, 108], # F major chord
+    [103, 107, 110], # G major chord
+    [105, 108, 112] # A minor chord
+]
+
+# State variables to track if a note has been played for each touch pin
+note_played = [False] * len(touch_pins)
+
+# Dictionary to keep track of which notes are currently playing
+playing_notes = {}
+
+# Main loop
+while True:
+    for i, sensor in enumerate(touch_sensors):
+        # If the capacitive touch is activated
+        if sensor.value:
+            if not note_played[i]:
+                # Play the chord corresponding to the pin
+                for note in chords[i]:
+                    midi.send(NoteOn(note, 120))
+                    playing_notes[note] = playing_notes.get(note, 0) + 1
+                note_played[i] = True
+        else:
+            if note_played[i]:
+                # Stop playing the chord
+                for note in chords[i]:
+                    playing_notes[note] = max(0, playing_notes[note] - 1)
+                    if playing_notes[note] == 0:
+                        midi.send(NoteOff(note, 0))
+                        del playing_notes[note]
+                note_played[i] = False
+
+    time.sleep(0.01)  # Small delay to prevent high CPU usage
+
