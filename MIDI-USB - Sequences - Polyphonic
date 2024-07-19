@@ -1,0 +1,88 @@
+# This one's a bit unstable! 
+
+import time
+import board
+import touchio
+import usb_midi
+import adafruit_midi
+from adafruit_midi.note_on import NoteOn
+from adafruit_midi.note_off import NoteOff
+import asyncio
+
+# Define the touch pins in ascending order
+touch_pins = [board.GP0, board.GP1, board.GP2, board.GP3, board.GP4, board.GP5, board.GP6, board.GP7, board.GP8, board.GP9, board.GP10, board.GP11, board.GP12, board.GP13, board.GP14, board.GP15, board.GP16, board.GP17, board.GP18, board.GP19, board.GP20, board.GP21, board.GP22, board.GP26, board.GP27, board.GP28]
+
+# Initialize touch sensors
+touch_sensors = []
+for pin in touch_pins:
+    try:
+        touch_sensors.append(touchio.TouchIn(pin))
+    except ValueError:
+        print(f"No pulldown resistor found on pin {pin}, skipping...")
+
+# MIDI setup
+midi = adafruit_midi.MIDI(midi_out=usb_midi.ports[1], out_channel=2)
+
+# Sequence configuration for each pin (up 4 notes and then down 4 notes)
+arpeggios = [
+    [48, 52, 55, 59, 62, 65, 62, 59],  # C major chord
+    [50, 53, 57, 60, 64, 67, 64, 60],  # D minor chord
+    [52, 55, 59, 62, 65, 69, 65, 62],  # E minor chord
+    [53, 57, 60, 64, 67, 71, 67, 64],  # F major chord
+    [55, 59, 62, 65, 69, 72, 69, 65],  # G major chord
+    [57, 60, 64, 67, 71, 74, 71, 67],  # A minor chord
+    [59, 62, 65, 69, 72, 76, 72, 69],  # B diminished chord
+    [60, 64, 67, 71, 74, 77, 74, 71],  # C major chord
+    [62, 65, 69, 72, 76, 79, 76, 72],  # D minor chord
+    [64, 67, 71, 74, 77, 81, 77, 74],  # E minor chord
+    [65, 69, 72, 76, 79, 83, 79, 76],  # F major chord
+    [67, 71, 74, 77, 81, 84, 81, 77],  # G major chord
+    [69, 72, 76, 79, 83, 86, 83, 79],  # A minor chord
+    [71, 74, 77, 81, 84, 88, 84, 81],  # B diminished chord
+    [72, 76, 79, 83, 86, 89, 86, 83],  # C major chord
+    [74, 77, 81, 84, 88, 91, 88, 84],  # D minor chord
+    [76, 79, 83, 86, 89, 93, 89, 86],  # E minor chord
+    [77, 81, 84, 88, 91, 95, 91, 88],  # F major chord
+    [79, 83, 86, 89, 93, 96, 93, 89],  # G major chord
+    [81, 84, 88, 91, 95, 98, 95, 91],  # A minor chord
+    [83, 86, 89, 93, 96, 100, 96, 93],  # B diminished chord
+    [84, 88, 91, 95, 98, 101, 98, 95],  # C major chord
+    [86, 89, 93, 96, 100, 103, 100, 96], # D minor chord
+    [88, 91, 95, 98, 101, 105, 101, 98], # E minor chord
+    [89, 93, 96, 100, 103, 107, 103, 100], # F major chord
+    [91, 95, 98, 101, 105, 108, 105, 101], # G major chord
+    [93, 96, 100, 103, 107, 110, 107, 103], # A minor chord
+    [95, 98, 101, 105, 108, 112, 108, 105] # B diminished chord
+]
+
+# State variables to track if a note has been played for each touch pin
+note_played = [False] * len(touch_pins)
+playing_sequences = [False] * len(touch_pins)
+
+async def play_arpeggio(index):
+    arpeggio = arpeggios[index]
+    for note in arpeggio:
+        midi.send(NoteOn(note, 120))
+        await asyncio.sleep(0.2)  # Delay between each note in the arpeggio
+    await asyncio.sleep(0.5)  # Duration of the arpeggio
+    for note in arpeggio:
+        midi.send(NoteOff(note, 0))
+    playing_sequences[index] = False
+
+async def main():
+    while True:
+        for i, touch_sensor in enumerate(touch_sensors):
+            if touch_sensor.value:
+                if not note_played[i]:
+                    print("Touch detected on pin", i)
+                    if not playing_sequences[i]:
+                        playing_sequences[i] = True
+                        asyncio.create_task(play_arpeggio(i))
+                    note_played[i] = True
+            else:
+                if note_played[i]:
+                    note_played[i] = False
+        await asyncio.sleep(0.01)  # Small delay to prevent CPU overuse
+
+asyncio.run(main())
+
