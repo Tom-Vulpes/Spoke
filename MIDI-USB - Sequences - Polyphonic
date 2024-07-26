@@ -1,18 +1,17 @@
-# This one's a bit unstable! 
+# This is the code for USB-MIDI. In this code we assign a midi value to each pin, and when the board senses that the pin has been touched it will send a NoteOn message. When the pin is released, it sends a NoteOff message.
 
 import time
 import board
 import touchio
+import digitalio
 import usb_midi
 import adafruit_midi
 from adafruit_midi.note_on import NoteOn
 from adafruit_midi.note_off import NoteOff
-import asyncio
 
-# Define the touch pins in ascending order
+# Define the touch pins
 touch_pins = [board.GP0, board.GP1, board.GP2, board.GP3, board.GP4, board.GP5, board.GP6, board.GP7, board.GP8, board.GP9, board.GP10, board.GP11, board.GP12, board.GP13, board.GP14, board.GP15, board.GP16, board.GP17, board.GP18, board.GP19, board.GP20, board.GP21, board.GP22, board.GP26, board.GP27, board.GP28]
 
-# Initialize touch sensors
 touch_sensors = []
 for pin in touch_pins:
     try:
@@ -20,69 +19,35 @@ for pin in touch_pins:
     except ValueError:
         print(f"No pulldown resistor found on pin {pin}, skipping...")
 
-# MIDI setup
-midi = adafruit_midi.MIDI(midi_out=usb_midi.ports[1], out_channel=2)
 
-# Sequence configuration for each pin (up 4 notes and then down 4 notes)
-arpeggios = [
-    [48, 52, 55, 59, 62, 65, 62, 59],  # C major chord
-    [50, 53, 57, 60, 64, 67, 64, 60],  # D minor chord
-    [52, 55, 59, 62, 65, 69, 65, 62],  # E minor chord
-    [53, 57, 60, 64, 67, 71, 67, 64],  # F major chord
-    [55, 59, 62, 65, 69, 72, 69, 65],  # G major chord
-    [57, 60, 64, 67, 71, 74, 71, 67],  # A minor chord
-    [59, 62, 65, 69, 72, 76, 72, 69],  # B diminished chord
-    [60, 64, 67, 71, 74, 77, 74, 71],  # C major chord
-    [62, 65, 69, 72, 76, 79, 76, 72],  # D minor chord
-    [64, 67, 71, 74, 77, 81, 77, 74],  # E minor chord
-    [65, 69, 72, 76, 79, 83, 79, 76],  # F major chord
-    [67, 71, 74, 77, 81, 84, 81, 77],  # G major chord
-    [69, 72, 76, 79, 83, 86, 83, 79],  # A minor chord
-    [71, 74, 77, 81, 84, 88, 84, 81],  # B diminished chord
-    [72, 76, 79, 83, 86, 89, 86, 83],  # C major chord
-    [74, 77, 81, 84, 88, 91, 88, 84],  # D minor chord
-    [76, 79, 83, 86, 89, 93, 89, 86],  # E minor chord
-    [77, 81, 84, 88, 91, 95, 91, 88],  # F major chord
-    [79, 83, 86, 89, 93, 96, 93, 89],  # G major chord
-    [81, 84, 88, 91, 95, 98, 95, 91],  # A minor chord
-    [83, 86, 89, 93, 96, 100, 96, 93],  # B diminished chord
-    [84, 88, 91, 95, 98, 101, 98, 95],  # C major chord
-    [86, 89, 93, 96, 100, 103, 100, 96], # D minor chord
-    [88, 91, 95, 98, 101, 105, 101, 98], # E minor chord
-    [89, 93, 96, 100, 103, 107, 103, 100], # F major chord
-    [91, 95, 98, 101, 105, 108, 105, 101], # G major chord
-    [93, 96, 100, 103, 107, 110, 107, 103], # A minor chord
-    [95, 98, 101, 105, 108, 112, 108, 105] # B diminished chord
-]
+# MIDI setup - If you want to assign the midi device to a specific channel or port then just change the values in this line.
+midi = adafruit_midi.MIDI(midi_out=usb_midi.ports[1], out_channel=0)
+
+# MIDI note numbers corresponding to each touch pin - change these to whatever midi note you prefer. 
+midi_notes = [36, 38, 40, 43, 45, 48, 50, 52, 55, 57, 60, 62, 64, 67, 69, 72, 74, 76, 79, 81, 84, 86, 88, 91, 93, 96] 
 
 # State variables to track if a note has been played for each touch pin
 note_played = [False] * len(touch_pins)
-playing_sequences = [False] * len(touch_pins)
 
-async def play_arpeggio(index):
-    arpeggio = arpeggios[index]
-    for note in arpeggio:
-        midi.send(NoteOn(note, 120))
-        await asyncio.sleep(0.2)  # Delay between each note in the arpeggio
-    await asyncio.sleep(0.5)  # Duration of the arpeggio
-    for note in arpeggio:
-        midi.send(NoteOff(note, 0))
-    playing_sequences[index] = False
+# Setup LED toggling
+led = digitalio.DigitalInOut(board.LED)
+led.direction = digitalio.Direction.OUTPUT
 
-async def main():
-    while True:
-        for i, touch_sensor in enumerate(touch_sensors):
-            if touch_sensor.value:
-                if not note_played[i]:
-                    print("Touch detected on pin", i)
-                    if not playing_sequences[i]:
-                        playing_sequences[i] = True
-                        asyncio.create_task(play_arpeggio(i))
-                    note_played[i] = True
-            else:
-                if note_played[i]:
-                    note_played[i] = False
-        await asyncio.sleep(0.01)  # Small delay to prevent CPU overuse
-
-asyncio.run(main())
-
+# Main loop
+while True:
+    for i, touch_sensor in enumerate(touch_sensors):
+        # Capacitive touch sensing
+        if touch_sensor.value:
+            # Check if the note has already been played
+            if not note_played[i]:
+                # Send MIDI note on message when touch is detected. The Velocity is set to 120, change the value if you want to.
+                midi.send(NoteOn(midi_notes[i], 120))
+                led.value = True
+                note_played[i] = True  # Update state variable
+        else:
+            # Check if the note has been played and turn it off
+            if note_played[i]:
+                # Send MIDI note off message when touch is released
+                midi.send(NoteOff(midi_notes[i], 120))
+                led.value = False
+                note_played[i] = False  # Update state variable
