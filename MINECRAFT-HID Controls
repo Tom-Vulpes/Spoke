@@ -45,8 +45,8 @@ KEYMAP_MINECRAFT = (
     ("Sneak", [Keycode.LEFT_SHIFT]),   # Sneak (crouch)
     ("Inventory", [Keycode.E]),    # Open inventory
     ("Use", [Keycode.RIGHT_SHIFT]),    # Use item/place block
-    ("Attack", [Keycode.MOUSE_LEFT]),   # Attack
-    ("Interact", [Keycode.MOUSE_RIGHT]),    # Interact
+    ("Attack", [mouse.LEFT_BUTTON]),   # Attack
+    ("Interact", [mouse.RIGHT_BUTTON]),    # Interact
     ("Sprint", [Keycode.LEFT_CONTROL]),    # Sprint
     ("Drop", [Keycode.Q]),         # Drop item
 )
@@ -87,7 +87,7 @@ while True:
                 mouse.move(x=0, y=MOUSE_MOVEMENT)  # Move mouse downwards
             elif i == 4:  # GP16
                 mouse.click(Mouse.LEFT_BUTTON)  # Perform a left mouse click
-            time.sleep(0.1)  # Add a small delay to debounce
+                time.sleep(0.1)  # Add a small delay to debounce
             elif i == 5:  # GP17
                 mouse.click(Mouse.RIGHT_BUTTON)  # Perform a right mouse click
-            time.sleep(0.1)  # Add a small delay to debounce
+                time.sleep(0.1)  # Add a small delay to debounce
