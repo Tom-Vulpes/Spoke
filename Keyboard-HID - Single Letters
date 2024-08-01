@@ -2,10 +2,16 @@ import time
 import board
 import touchio
 import usb_hid
+import digitalio
+
 from adafruit_hid.keyboard import Keyboard
 from adafruit_hid.keycode import Keycode
 
 kpd = Keyboard(usb_hid.devices)
+
+# Setup LED toggling
+led = digitalio.DigitalInOut(board.LED)
+led.direction = digitalio.Direction.OUTPUT
 
 # Define the touch pins
 touch_pins = [board.GP0, board.GP1, board.GP2, board.GP3, board.GP4, board.GP5, board.GP6, board.GP7, board.GP8, board.GP9, board.GP10, board.GP11, board.GP12, board.GP13, board.GP14, board.GP15, board.GP16, board.GP17, board.GP18, board.GP19, board.GP20, board.GP21, board.GP22, board.GP26, board.GP27, board.GP28]
@@ -68,6 +74,8 @@ while True:
                 # Send HID keyboard commands corresponding to the key
                 for keycode in KEYMAP[i][1]:
                     kpd.press(keycode)
+                    led.value = True
+
                 key_states[i] = True  # Update key state
         else:
             # If the key was previously pressed, release it
@@ -75,5 +83,7 @@ while True:
                 # Release all keys associated with this key
                 for keycode in KEYMAP[i][1]:
                     kpd.release(keycode)
+                    led.value = False
+
                 key_states[i] = False  # Update key state
     time.sleep(0.1)  # Add a small delay to debounce
