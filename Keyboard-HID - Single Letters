@@ -26,32 +26,32 @@ for pin in touch_pins:
 
 # Keymap configuration
 KEYMAP = (
-    ("A", [Keycode.A]),
-    ("B", [Keycode.B]),
-    ("C", [Keycode.C]),
-    ("D", [Keycode.D]),
-    ("E", [Keycode.E]),
-    ("F", [Keycode.F]),
-    ("G", [Keycode.G]),
-    ("H", [Keycode.H]),
-    ("I", [Keycode.I]),
-    ("J", [Keycode.J]),
-    ("K", [Keycode.K]),
-    ("L", [Keycode.L]),
-    ("M", [Keycode.M]),
-    ("N", [Keycode.N]),
-    ("O", [Keycode.O]),
-    ("P", [Keycode.P]),
-    ("Q", [Keycode.Q]),
-    ("R", [Keycode.R]),
-    ("S", [Keycode.S]),
-    ("T", [Keycode.T]),
-    ("U", [Keycode.U]),
-    ("V", [Keycode.V]),
-    ("W", [Keycode.W]),
-    ("X", [Keycode.X]),
-    ("Y", [Keycode.Y]),
-    ("Z", [Keycode.Z])
+    ("A", [Keycode.A]), #gp00
+    ("B", [Keycode.B]), #gp01
+    ("C", [Keycode.C]), #gp02
+    ("D", [Keycode.D]), #gp03
+    ("E", [Keycode.E]), #gp04
+    ("F", [Keycode.F]), #gp05
+    ("G", [Keycode.G]), #gp06
+    ("H", [Keycode.H]), #gp07
+    ("I", [Keycode.I]), #gp08
+    ("J", [Keycode.J]), #gp09
+    ("K", [Keycode.K]), #gp10
+    ("L", [Keycode.L]), #gp11
+    ("M", [Keycode.M]), #gp12
+    ("N", [Keycode.N]), #gp13
+    ("O", [Keycode.O]), #gp14
+    ("P", [Keycode.P]), #gp15
+    ("Q", [Keycode.Q]), #gp16
+    ("R", [Keycode.R]), #gp17
+    ("S", [Keycode.S]), #gp18
+    ("T", [Keycode.T]), #gp19
+    ("U", [Keycode.U]), #gp20
+    ("V", [Keycode.V]), #gp21
+    ("W", [Keycode.W]), #gp22
+    ("X", [Keycode.X]), #gp26
+    ("Y", [Keycode.Y]), #gp27
+    ("Z", [Keycode.Z]) #gp28
 )
 
 print("\nWelcome to keypad")
