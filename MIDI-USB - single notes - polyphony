@@ -42,12 +42,12 @@ while True:
             if not note_played[i]:
                 # Send MIDI note on message when touch is detected. The Velocity is set to 120, change the value if you want to.
                 midi.send(NoteOn(midi_notes[i], 120))
-    		    led.value = True
+                led.value = True
                 note_played[i] = True  # Update state variable
         else:
             # Check if the note has been played and turn it off
             if note_played[i]:
                 # Send MIDI note off message when touch is released
                 midi.send(NoteOff(midi_notes[i], 120))
-		        led.value = False
+                led.value = False
                 note_played[i] = False  # Update state variable
