@@ -1,5 +1,4 @@
-# This is the code for USB-MIDI. In this code we assign a midi value to each pin, and when the board senses that the pin has been touched it will send a NoteOn message. When the pin is released, it sends a NoteOff message.
-
+# This is the code for USB-MIDI with dynamic threshold initialization.
 import time
 import board
 import touchio
@@ -19,13 +18,15 @@ for pin in touch_pins:
     except ValueError:
         print(f"No pulldown resistor found on pin {pin}, skipping...")
 
-# Set sensitivity threshold
-touch_threshold = 2000  # Adjust this value as needed for your application
+# Dynamic threshold initialization
+baseline_values = [sensor.raw_value for sensor in touch_sensors]
+touch_thresholds = [baseline + 1000 for baseline in baseline_values]  # Adjust the offset as needed
+release_thresholds = [baseline + 800 for baseline in baseline_values]  # Release threshold slightly below touch
 
-# MIDI setup - If you want to assign the midi device to a specific channel or port then just change the values in this line.
+# MIDI setup
 midi = adafruit_midi.MIDI(midi_out=usb_midi.ports[1], out_channel=0)
 
-# MIDI note numbers corresponding to each touch pin - change these to whatever midi note you prefer. 
+# MIDI note numbers corresponding to each touch pin
 midi_notes = [36, 38, 40, 43, 45, 48, 50, 52, 55, 57, 60, 62, 64, 67, 69, 72, 74, 76, 79, 81, 84, 86, 88, 91, 93, 96] 
 
 # State variables to track if a note has been played for each touch pin
@@ -35,23 +36,26 @@ note_played = [False] * len(touch_pins)
 led = digitalio.DigitalInOut(board.LED)
 led.direction = digitalio.Direction.OUTPUT
 
+print("Baseline Values:", baseline_values)
+print("Touch Thresholds:", touch_thresholds)
+print("Release Thresholds:", release_thresholds)
+
 # Main loop
 while True:
     for i, touch_sensor in enumerate(touch_sensors):
-        # Capacitive touch sensing
-        if touch_sensor.raw_value > touch_threshold:
-            # Check if the note has already been played
-            if not note_played[i]:
-                # Send MIDI note on message when touch is detected. The Velocity is set to 120, change the value if you want to.
-                midi.send(NoteOn(midi_notes[i], 120))
-                led.value = True
-                note_played[i] = True  # Update state variable
-                #print (touch_sensor.raw_value) #uncomment to print threshold levels in IDE shell
-        else:
-            # Check if the note has been played and turn it off
-            if note_played[i]:
-                # Send MIDI note off message when touch is released
-                midi.send(NoteOff(midi_notes[i], 120))
-                led.value = False
-                note_played[i] = False  # Update state variable
+        raw_value = touch_sensor.raw_value
+
+        # Capacitive touch sensing with dynamic thresholds
+        if raw_value > touch_thresholds[i] and not note_played[i]:
+            # Send MIDI note on message when touch is detected
+            midi.send(NoteOn(midi_notes[i], 120))
+            led.value = True
+            note_played[i] = True  # Update state variable
+            #print (touch_sensor.raw_value)
+
+        elif raw_value < release_thresholds[i] and note_played[i]:
+            # Send MIDI note off message when touch is released
+            midi.send(NoteOff(midi_notes[i], 120))
+            led.value = False
+            note_played[i] = False  # Update state variable
 
