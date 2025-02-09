@@ -9,8 +9,9 @@ import neopixel
 
 # Configuration
 BPM = 120  # Beats per minute
-STEPS = 16  # Default number of steps in the sequence
+STEPS = 18  # Default number of steps in the sequence
 MIDI_NOTE = 60  # MIDI note to play
+NOTE_LENGTH = 2  # Length of the note in seconds
 
 # Calculate step delay based on BPM
 step_delay = 60 / BPM
@@ -41,8 +42,11 @@ midi = adafruit_midi.MIDI(midi_out=usb_midi.ports[1], out_channel=0)
 # Step sequencer state
 sequence = [False] * STEPS  # False = no note, True = play note
 current_step = 0
+note_start_time = None
 
 while True:
+    start_time = time.monotonic()
+    
     # Check for touch input
     for i, sensor in enumerate(touch_sensors):
         if sensor.value:
@@ -66,12 +70,18 @@ while True:
     
         if sequence[current_step]:
             midi.send(NoteOn(MIDI_NOTE, 120))
-            time.sleep(0.1)  # Note length
-            midi.send(NoteOff(MIDI_NOTE, 120))
+            note_start_time = time.monotonic()
     
     pixels.show()
-    time.sleep(step_delay)  # Wait for next step
+    
+    # Maintain timing consistency
+    elapsed_time = time.monotonic() - start_time
+    time.sleep(max(0, step_delay - elapsed_time))
+    
+    # Turn off note if it has reached NOTE_LENGTH
+    if note_start_time and (time.monotonic() - note_start_time) >= NOTE_LENGTH:
+        midi.send(NoteOff(MIDI_NOTE, 120))
+        note_start_time = None
     
     if len(sequence) > 0:
         current_step = (current_step + 1) % len(sequence)  # Advance step safely
-
