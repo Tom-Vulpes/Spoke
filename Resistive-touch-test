@@ -1,0 +1,56 @@
+import time
+import board
+import digitalio
+import usb_midi
+import adafruit_midi
+from adafruit_midi.note_on import NoteOn
+from adafruit_midi.note_off import NoteOff
+
+# Define all usable GPIO pins (excluding GP23, GP24, GP25)
+TOUCH_PINS = [
+    board.GP0, board.GP1, board.GP2, board.GP3, board.GP4, board.GP5, board.GP6, board.GP7,
+    board.GP8, board.GP9, board.GP10, board.GP11, board.GP12, board.GP13, board.GP14, board.GP15,
+    board.GP16, board.GP17, board.GP18, board.GP19, board.GP20, board.GP21, board.GP22, board.GP26,
+    board.GP27, board.GP28
+]
+
+# Initialize each pin as an input with pull-up enabled
+touch_sensors = []
+for pin in TOUCH_PINS:
+    sensor = digitalio.DigitalInOut(pin)
+    sensor.direction = digitalio.Direction.INPUT
+    sensor.pull = digitalio.Pull.UP  # Pull-up to detect grounding
+    touch_sensors.append((pin, sensor))
+
+# MIDI setup
+midi = adafruit_midi.MIDI(midi_out=usb_midi.ports[1], out_channel=0)
+
+# MIDI note numbers for each touch pin (customize as needed)
+midi_notes = [
+    36, 38, 40, 41, 43, 45, 47, 48, 50, 52, 53, 55, 57, 59, 60, 62,
+    64, 65, 67, 69, 71, 72, 74, 76, 77, 79
+]
+
+# State variables to track if a note has been played for each touch pin
+note_played = [False] * len(TOUCH_PINS)
+
+# Setup onboard LED for feedback
+led = digitalio.DigitalInOut(board.LED)
+led.direction = digitalio.Direction.OUTPUT
+
+# Main loop
+while True:
+    for i, (pin, sensor) in enumerate(touch_sensors):
+        if not sensor.value:  # Reads LOW when touched
+            if not note_played[i]:  # If note isn't already playing
+                midi.send(NoteOn(midi_notes[i], 120))  # Send MIDI NoteOn
+                led.value = True
+                note_played[i] = True
+        else:
+            if note_played[i]:  # If note was playing, turn it off
+                midi.send(NoteOff(midi_notes[i], 120))  # Send MIDI NoteOff
+                led.value = False
+                note_played[i] = False
+
+    time.sleep(0.01)  # Short delay to reduce CPU usage
+
