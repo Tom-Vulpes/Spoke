@@ -1,0 +1,86 @@
+import time
+import board
+import touchio
+import usb_hid
+import neopixel
+from adafruit_hid.keyboard import Keyboard
+from adafruit_hid.keycode import Keycode
+from rainbowio import colorwheel
+
+# Initialize keyboard HID
+kpd = Keyboard(usb_hid.devices)
+
+# Define the touch pins
+touch_pins = [
+    board.GP1, board.GP2, board.GP3, board.GP4, board.GP5, board.GP6, board.GP7, board.GP8,
+    board.GP9, board.GP10, board.GP11, board.GP12, board.GP13, board.GP14, board.GP15, board.GP16,
+    board.GP17, board.GP18, board.GP19, board.GP20, board.GP21, board.GP22, board.GP23, board.GP24,
+    board.GP25, board.GP28, board.VOLTAGE_MONITOR
+]
+
+# Initialize touch sensors
+touch_sensors = []
+for pin in touch_pins:
+    try:
+        touch_sensors.append(touchio.TouchIn(pin))
+    except ValueError:
+        print(f"No pulldown resistor found on pin {pin}, skipping...")
+
+# Key mappings corresponding to touch pins
+KEYMAP = [
+    Keycode.A, Keycode.B, Keycode.C, Keycode.D, Keycode.E, Keycode.F, Keycode.G, Keycode.H,
+    Keycode.I, Keycode.J, Keycode.K, Keycode.L, Keycode.M, Keycode.N, Keycode.O, Keycode.P,
+    Keycode.Q, Keycode.R, Keycode.S, Keycode.T, Keycode.U, Keycode.V, Keycode.W, Keycode.X,
+    Keycode.Y, Keycode.Z, Keycode.SPACE
+]
+
+# State tracking for key presses
+key_states = [False] * len(touch_pins)
+
+# NeoPixel setup
+num_pixels = len(touch_pins)  # Match the number of touch pins
+pixels = neopixel.NeoPixel(board.GP0, num_pixels, brightness=0.02, auto_write=True)
+
+def rainbow(speed, duration, step_size=10):
+    start_time = time.monotonic()
+    while time.monotonic() - start_time < duration:
+        for j in range(0, 256, step_size):
+            for i in range(num_pixels):
+                pixel_index = (i * 256 // num_pixels + j) % 256
+                pixels[i] = colorwheel(pixel_index)
+            pixels.show()
+            if time.monotonic() - start_time >= duration:
+                return  # Exit early
+            time.sleep(speed)
+
+
+def rainbow_gradient(index):
+    """Sets all pixels to a different gradient of a rainbow color"""
+    color = colorwheel(int((index / len(touch_pins)) * 255))
+    pixels.fill(color)
+    pixels.show()
+    return color  # Return the selected color for external use
+
+def turn_red(index):
+    pixels[index] = (255, 0, 0)
+    pixels.show()
+
+# Startup sequence
+rainbow(0.0001, 2, step_size=10)
+pixels.fill((0, 0, 0))
+pixels.show()
+
+# Main loop
+while True:
+    for i, touch_sensor in enumerate(touch_sensors):
+        if touch_sensor.value:
+            if not key_states[i]:
+                kpd.press(KEYMAP[i])
+                key_states[i] = True
+                selected_color = rainbow_gradient(i)  # Change LED color to a gradient
+                turn_red(i)
+        else:
+            if key_states[i]:
+                kpd.release(KEYMAP[i])
+                key_states[i] = False
+    time.sleep(0.1)
