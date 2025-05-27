@@ -1,0 +1,112 @@
+import time
+import board
+import touchio
+import usb_hid
+import neopixel
+from adafruit_hid.keyboard import Keyboard
+from adafruit_hid.keycode import Keycode
+from adafruit_hid.mouse import Mouse
+from rainbowio import colorwheel
+
+# Initialize USB HID devices
+kpd = Keyboard(usb_hid.devices)
+mouse = Mouse(usb_hid.devices)
+
+# Define the touch pins (excluding GP0 for Neopixels)
+wasd_pins = [board.GP1, board.GP2, board.GP3, board.GP4]  # Movement keys (Red)
+action_pins = [board.GP5, board.GP6, board.GP7, board.GP8, board.GP9, board.GP10]  # Actions (Green)
+mouse_pins = [board.GP11, board.GP12, board.GP13, board.GP14, board.GP15, board.GP16]  # Mouse (Blue)
+
+# Initialize touch sensors
+wasd_sensors = [touchio.TouchIn(pin) for pin in wasd_pins]
+action_sensors = [touchio.TouchIn(pin) for pin in action_pins]
+mouse_sensors = [touchio.TouchIn(pin) for pin in mouse_pins]
+
+# Keymap configuration for Minecraft controls
+KEYMAP_MINECRAFT = (
+    ("Forward", [Keycode.W]),  # GP1
+    ("Left", [Keycode.A]),  # GP2
+    ("Back", [Keycode.S]),  # GP3
+    ("Right", [Keycode.D]),  # GP4
+    ("Jump", [Keycode.SPACE]),  # GP6
+    ("Sneak", [Keycode.LEFT_SHIFT]),  # GP7
+    ("Inventory", [Keycode.E]),  # GP8
+    ("Use", [Keycode.RIGHT_SHIFT]),  # GP9
+    ("Sprint", [Keycode.LEFT_CONTROL]),  # GP10
+    ("Drop", [Keycode.Q])  # GP11
+)
+
+# Mouse movement configuration
+MOUSE_MOVEMENT = 10  # Adjust mouse movement speed
+
+# NeoPixel setup
+num_pixels = len(wasd_pins) + len(action_pins) + len(mouse_pins)
+pixels = neopixel.NeoPixel(board.GP0, num_pixels, brightness=0.03, auto_write=True)
+
+def rainbow(speed, duration, step_size=10):
+    start_time = time.monotonic()
+    while time.monotonic() - start_time < duration:
+        for j in range(0, 256, step_size):
+            for i in range(num_pixels):
+                pixel_index = (i * 256 // num_pixels + j) % 256
+                pixels[i] = colorwheel(pixel_index)
+            pixels.show()
+            if time.monotonic() - start_time >= duration:
+                return
+            time.sleep(speed)
+
+def set_initial_colors():
+    pixels[:len(wasd_pins)] = [(255, 0, 0)] * len(wasd_pins)  # Red for movement
+    pixels[len(wasd_pins):len(wasd_pins) + len(action_pins)] = [(0, 255, 0)] * len(action_pins)  # Green for actions
+    pixels[len(wasd_pins) + len(action_pins):] = [(0, 0, 255)] * len(mouse_pins)  # Blue for mouse
+    pixels.show()
+
+def set_color(index, color):
+    pixels[index] = color
+    pixels.show()
+
+# Startup sequence
+rainbow(0.0001, 2, step_size=10)
+set_initial_colors()
+
+# Main loop
+while True:
+    for i, sensor in enumerate(wasd_sensors):
+        if sensor.value:
+            kpd.press(*KEYMAP_MINECRAFT[i][1])
+            set_color(i, (255, 105, 180))  # Pink when pressed
+        else:
+            kpd.release(*KEYMAP_MINECRAFT[i][1])
+            set_color(i, (255, 0, 0))  # Red when released
+    
+    for i, sensor in enumerate(action_sensors):
+        if sensor.value:
+            kpd.press(*KEYMAP_MINECRAFT[i + 4][1])
+            set_color(len(wasd_pins) + i, (255, 105, 180))
+        else:
+            kpd.release(*KEYMAP_MINECRAFT[i + 4][1])
+            set_color(len(wasd_pins) + i, (0, 255, 0))
+    
+    for i, sensor in enumerate(mouse_sensors):
+        index = len(wasd_pins) + len(action_pins) + i
+        if sensor.value:
+            if i == 0:
+                mouse.move(x=MOUSE_MOVEMENT, y=0)
+            elif i == 1:
+                mouse.move(x=-MOUSE_MOVEMENT, y=0)
+            elif i == 2:
+                mouse.move(x=0, y=-MOUSE_MOVEMENT)
+            elif i == 3:
+                mouse.move(x=0, y=MOUSE_MOVEMENT)
+            elif i == 4:
+                mouse.click(Mouse.LEFT_BUTTON)
+                time.sleep(0.01)
+            elif i == 5:
+                mouse.click(Mouse.RIGHT_BUTTON)
+                time.sleep(0.01)
+            set_color(index, (255, 105, 180))
+        else:
+            set_color(index, (0, 0, 255))
+    
+    time.sleep(0.1)
+
