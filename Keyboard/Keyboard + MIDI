@@ -1,0 +1,84 @@
+import time
+import board
+import touchio
+import usb_midi
+import usb_hid
+import adafruit_midi
+from adafruit_midi.note_on import NoteOn
+from adafruit_midi.note_off import NoteOff
+import neopixel
+from rainbowio import colorwheel
+from adafruit_hid.keyboard import Keyboard
+from adafruit_hid.keycode import Keycode
+
+# Define the first 14 touch pins for MIDI
+midi_pins = [
+    board.GP1, board.GP2, board.GP3, board.GP4, board.GP5, board.GP6, board.GP7,
+    board.GP8, board.GP9, board.GP10, board.GP11, board.GP12, board.GP13, board.GP14
+]
+
+# Define the last 13 touch pins for HID keyboard
+keyboard_pins = [
+    board.GP15, board.GP16, board.GP17, board.GP18, board.GP19, board.GP20, board.GP21,
+    board.GP22, board.GP23, board.GP24, board.GP25, board.GP28, board.VOLTAGE_MONITOR
+]
+
+# MIDI note numbers for first 14 pins
+midi_notes = [98, 96, 93, 91, 88, 86, 84, 81, 79, 76, 74, 72, 69, 67]
+
+# Keyboard key mapping for last 13 pins
+key_map = [
+    Keycode.A, Keycode.S, Keycode.D, Keycode.F, Keycode.G, Keycode.H, Keycode.J,
+    Keycode.K, Keycode.L, Keycode.SEMICOLON, Keycode.QUOTE, Keycode.RETURN, Keycode.SPACE
+]
+
+# Initialize MIDI
+midi = adafruit_midi.MIDI(midi_out=usb_midi.ports[1], out_channel=0)
+
+# Initialize HID Keyboard
+keyboard = Keyboard(usb_hid.devices)
+
+# Initialize touch sensors
+midi_sensors = [touchio.TouchIn(pin) for pin in midi_pins]
+keyboard_sensors = [touchio.TouchIn(pin) for pin in keyboard_pins]
+
+# NeoPixel setup
+num_pixels = len(midi_pins) + len(keyboard_pins)
+pixels = neopixel.NeoPixel(board.GP0, num_pixels, brightness=0.03, auto_write=True)
+
+# Track touch states
+midi_playing = [False] * len(midi_pins)
+keyboard_pressed = [False] * len(keyboard_pins)
+
+# Function to set all pixels blue
+def all_blue():
+    pixels.fill((0, 0, 255))
+    pixels.show()
+
+# Startup animation
+all_blue()
+
+# Main loop
+while True:
+    # MIDI section (first 14 pins)
+    for i, sensor in enumerate(midi_sensors):
+        if sensor.value and not midi_playing[i]:
+            midi.send(NoteOn(midi_notes[i], 120))
+            pixels[i] = (255, 0, 0)  # Red when touched
+            midi_playing[i] = True
+        elif not sensor.value and midi_playing[i]:
+            midi.send(NoteOff(midi_notes[i], 120))
+            pixels[i] = (0, 0, 255)  # Blue when released
+            midi_playing[i] = False
+
+    # HID Keyboard section (last 13 pins)
+    for i, sensor in enumerate(keyboard_sensors):
+        if sensor.value and not keyboard_pressed[i]:
+            keyboard.press(key_map[i])
+            pixels[i + len(midi_pins)] = (255, 0, 0)  # Red when touched
+            keyboard_pressed[i] = True
+        elif not sensor.value and keyboard_pressed[i]:
+            keyboard.release(key_map[i])
+            pixels[i + len(midi_pins)] = (0, 0, 255)  # Blue when released
+            keyboard_pressed[i] = False
+
