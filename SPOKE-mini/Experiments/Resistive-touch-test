@@ -1,3 +1,5 @@
+#In this code we are using the pins to act as resistive touch pins instead of capacitive. This involves attaching each pin to GROUND via a button/switch
+
 import time
 import board
 import digitalio
