@@ -1,3 +1,8 @@
+#Code for basic Minecraft controls
+#Blue pins are for Mouse control
+#Green pins are for actions
+#Red pin are for movement
+
 import time
 import board
 import touchio
@@ -66,8 +71,11 @@ def set_color(index, color):
     pixels.show()
 
 # Startup sequence
+pixels.fill((0, 0, 0))  # Turn off all NeoPixels after startup
+
 rainbow(0.0001, 2, step_size=10)
 set_initial_colors()
+
 
 # Main loop
 while True:
@@ -109,4 +117,3 @@ while True:
             set_color(index, (0, 0, 255))
     
     time.sleep(0.1)
-
