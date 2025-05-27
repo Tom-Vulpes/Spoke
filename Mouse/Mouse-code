@@ -1,0 +1,121 @@
+import time
+import board
+import touchio
+import usb_hid
+import neopixel
+from adafruit_hid.mouse import Mouse
+from rainbowio import colorwheel
+
+# Initialize USB HID device
+mouse = Mouse(usb_hid.devices)
+
+# Define touch pins (excluding GP0 for Neopixels)
+mouse_pins = [
+    board.GP1, board.GP2, board.GP3, board.GP4,  # Mouse movement (X/Y)
+    board.GP5, board.GP6, board.GP7, board.GP8,  # Clicks (left, right, middle, double)
+    board.GP9, board.GP10, board.GP11, board.GP12,  # Scroll (up, down, tilt left, tilt right)
+    board.GP13, board.GP14, board.GP15, board.GP16, board.GP17,  # Hold buttons
+    board.GP18, board.GP19, board.GP20, board.GP21, board.GP22, board.GP28  # Drag, precise move, etc.
+]
+
+# NeoPixel setup
+num_pixels = len(mouse_pins)
+pixels = neopixel.NeoPixel(board.GP0, num_pixels, brightness=0.03, auto_write=True)
+
+# Initialize touch sensors
+mouse_sensors = [touchio.TouchIn(pin) for pin in mouse_pins]
+
+# Mouse movement configuration
+MOUSE_MOVEMENT = 10  # Adjust mouse movement speed
+SCROLL_AMOUNT = 1
+
+
+
+def rainbow(speed, duration, step_size=10):
+    start_time = time.monotonic()
+    while time.monotonic() - start_time < duration:
+        for j in range(0, 256, step_size):
+            for i in range(num_pixels):
+                pixel_index = (i * 256 // num_pixels + j) % 256
+                pixels[i] = colorwheel(pixel_index)
+            pixels.show()
+            if time.monotonic() - start_time >= duration:
+                return
+            time.sleep(speed)
+
+def set_initial_colors():
+    pixels[:4] = [(255, 0, 0)] * 4  # Red for movement
+    pixels[4:8] = [(0, 255, 0)] * 4  # Green for clicks
+    pixels[8:12] = [(0, 0, 255)] * 4  # Blue for scroll/tilt
+    pixels[12:17] = [(255, 255, 0)] * 5  # Yellow for hold
+    pixels[17:] = [(255, 0, 255)] * (num_pixels - 17)  # Purple for drag/precise
+    pixels.show()
+
+def set_color(index, color):
+    pixels[index] = color
+    pixels.show()
+
+# Startup sequence
+rainbow(0.0001, 2, step_size=10)
+set_initial_colors()
+
+# Main loop
+while True:
+    for i, sensor in enumerate(mouse_sensors):
+        if sensor.value:
+            if i == 0:
+                mouse.move(x=MOUSE_MOVEMENT, y=0)  # Move right
+            elif i == 1:
+                mouse.move(x=-MOUSE_MOVEMENT, y=0)  # Move left
+            elif i == 2:
+                mouse.move(x=0, y=-MOUSE_MOVEMENT)  # Move up
+            elif i == 3:
+                mouse.move(x=0, y=MOUSE_MOVEMENT)  # Move down
+            elif i == 4:
+                mouse.click(Mouse.LEFT_BUTTON)  # Left click
+            elif i == 5:
+                mouse.click(Mouse.RIGHT_BUTTON)  # Right click
+            elif i == 6:
+                mouse.click(Mouse.MIDDLE_BUTTON)  # Middle click
+            elif i == 7:
+                mouse.click(Mouse.LEFT_BUTTON)
+                time.sleep(0.05)
+                mouse.click(Mouse.LEFT_BUTTON)  # Double-click
+            elif i == 8:
+                mouse.move(wheel=SCROLL_AMOUNT)  # Scroll up
+            elif i == 9:
+                mouse.move(wheel=-SCROLL_AMOUNT)  # Scroll down
+            elif i == 10:
+                mouse.move(x=-MOUSE_MOVEMENT // 2)  # Tilt left
+            elif i == 11:
+                mouse.move(x=MOUSE_MOVEMENT // 2)  # Tilt right
+            elif i == 12:
+                mouse.press(Mouse.LEFT_BUTTON)  # Hold left button
+            elif i == 13:
+                mouse.press(Mouse.RIGHT_BUTTON)  # Hold right button
+            elif i == 14:
+                mouse.press(Mouse.MIDDLE_BUTTON)  # Hold middle button
+            elif i == 15:
+                mouse.release(Mouse.LEFT_BUTTON)  # Release left button
+            elif i == 16:
+                mouse.release(Mouse.RIGHT_BUTTON)  # Release right button
+            elif i == 17:
+                mouse.press(Mouse.LEFT_BUTTON)
+                mouse.move(x=MOUSE_MOVEMENT, y=0)  # Drag right
+            elif i == 18:
+                mouse.press(Mouse.LEFT_BUTTON)
+                mouse.move(x=-MOUSE_MOVEMENT, y=0)  # Drag left
+            elif i == 19:
+                mouse.press(Mouse.LEFT_BUTTON)
+                mouse.move(x=0, y=-MOUSE_MOVEMENT)  # Drag up
+            elif i == 20:
+                mouse.press(Mouse.LEFT_BUTTON)
+                mouse.move(x=0, y=MOUSE_MOVEMENT)  # Drag down
+            elif i == 21:
+                mouse.move(x=MOUSE_MOVEMENT // 5, y=MOUSE_MOVEMENT // 5)  # Precise diagonal move
+            elif i == 22:
+                mouse.move(x=-MOUSE_MOVEMENT // 5, y=-MOUSE_MOVEMENT // 5)  # Precise diagonal move
+            set_color(i, (255, 105, 180))  # Pink when pressed
+        else:
+            set_initial_colors()
+    time.sleep(0.1)
