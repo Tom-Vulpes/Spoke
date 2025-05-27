@@ -14,5 +14,7 @@ You will also need to copy and paste some libraries to the device if they're not
 On your CIRCUITPY device there is a folder that says lib. You will need to just **copy/paste the following libraries** from the bundle into that folder.
 
 For USB MIDI you will need the folder that says **adafruit_midi.**
+
 For the Keyboard emulator you will need the folder that says **adafruit_hid.**
+
 You will also need the **neopixel.mpy** file for any LED controls.
