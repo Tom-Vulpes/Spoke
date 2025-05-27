@@ -1,0 +1,108 @@
+import time
+import board
+import touchio
+import usb_hid
+import digitalio
+import neopixel
+from adafruit_hid.keyboard import Keyboard
+from adafruit_hid.keycode import Keycode
+from rainbowio import colorwheel
+
+# Initialize keyboard HID
+kpd = Keyboard(usb_hid.devices)
+
+# Define the touch pins
+touch_pins = [
+    board.GP1, board.GP2, board.GP3, board.GP4, board.GP5, board.GP6, board.GP7, board.GP8,
+    board.GP9, board.GP10, board.GP11, board.GP12, board.GP13, board.GP14, board.GP15, board.GP16,
+    board.GP17, board.GP18, board.GP19, board.GP20, board.GP21, board.GP22, board.GP23, board.GP24,
+    board.GP25, board.GP28, board.VOLTAGE_MONITOR
+]
+
+# Initialize touch sensors
+touch_sensors = []
+for pin in touch_pins:
+    try:
+        touch_sensors.append(touchio.TouchIn(pin))
+    except ValueError:
+        print(f"No pulldown resistor found on pin {pin}, skipping...")
+
+# Keymap configuration
+KEYMAP = (
+    ("UP", [Keycode.UP_ARROW]), # GP1
+    ("DOWN", [Keycode.DOWN_ARROW]), # GP2
+    ("LEFT", [Keycode.LEFT_ARROW]), # GP3
+    ("RIGHT", [Keycode.RIGHT_ARROW]), # GP4
+    ("CTRL+C", [Keycode.CONTROL, Keycode.C]), # GP5
+    ("CTRL+V", [Keycode.CONTROL, Keycode.V]), # GP6
+    ("CTRL+X", [Keycode.CONTROL, Keycode.X]), # GP7
+    ("CTRL+Z", [Keycode.CONTROL, Keycode.Z]), # GP8
+    ("WIN+L", [Keycode.WINDOWS, Keycode.L]), # GP9
+    ("WIN+D", [Keycode.WINDOWS, Keycode.D]), # GP10
+    ("WIN+E", [Keycode.WINDOWS, Keycode.E]), # GP11
+    ("WIN+R", [Keycode.WINDOWS, Keycode.R]), # GP12
+    ("ALT+TAB", [Keycode.ALT, Keycode.TAB]), # GP13
+    ("ALT+F4", [Keycode.ALT, Keycode.F4]), # GP14
+    ("CTRL+ALT+DEL", [Keycode.CONTROL, Keycode.ALT, Keycode.DELETE]), # GP15
+    ("ENTER", [Keycode.ENTER]), # GP16
+    ("ESC", [Keycode.ESCAPE]), # GP17
+    ("BACKSPACE", [Keycode.BACKSPACE]), # GP18
+    ("DELETE", [Keycode.DELETE]), # GP19
+    ("SPACE", [Keycode.SPACE]), # GP20
+    ("TAB", [Keycode.TAB]), # GP21
+    ("CAPS_LOCK", [Keycode.CAPS_LOCK]), # GP22
+    ("SHIFT", [Keycode.SHIFT]), # GP23
+    ("CTRL", [Keycode.CONTROL]), # GP24
+    ("ALT", [Keycode.ALT]), # GP25
+    ("F5", [Keycode.F5]), # GP28
+    ("F11", [Keycode.F11]), # VOLTAGE_MONITOR
+    ("PRINT_SCREEN", [Keycode.PRINT_SCREEN]) # Extra
+)
+
+# State tracking for key presses
+key_states = [False] * len(touch_pins)
+
+# NeoPixel setup
+num_pixels = len(touch_pins)  # Match the number of touch pins
+pixels = neopixel.NeoPixel(board.GP0, num_pixels, brightness=0.03, auto_write=True)
+
+def rainbow(speed, duration, step_size=10):
+    start_time = time.monotonic()
+    while time.monotonic() - start_time < duration:
+        for j in range(0, 256, step_size):
+            for i in range(num_pixels):
+                pixel_index = (i * 256 // num_pixels + j) % 256
+                pixels[i] = colorwheel(pixel_index)
+            pixels.show()
+            if time.monotonic() - start_time >= duration:
+                return  # Exit early
+            time.sleep(speed)
+
+def all_blue():
+    pixels.fill((0, 0, 255))
+    pixels.show()
+
+def turn_red(index):
+    pixels[index] = (255, 0, 0)
+    pixels.show()
+
+# Startup sequence
+rainbow(0.0001, 2, step_size=10)
+all_blue()
+
+# Main loop
+while True:
+    for i, touch_sensor in enumerate(touch_sensors):
+        if touch_sensor.value:
+            if not key_states[i]:
+                kpd.press(*KEYMAP[i][1])
+                key_states[i] = True
+                turn_red(i)  # Light up red when touched
+        else:
+            if key_states[i]:
+                kpd.release(*KEYMAP[i][1])
+                key_states[i] = False
+                pixels[i] = (0, 0, 255)  # Turn blue when released
+    time.sleep(0.1)
+
+
