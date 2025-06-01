@@ -1,3 +1,7 @@
+# This is the default code for the main SPOKE board. If you have the mini version or an older version with a visible Raspbery Pi Pico board attached, then use the code in the /SPOKE-mini folder on Github
+
+#This code sets up the touch pins as capacitive touch sensors, it also sets up the neopixels to match the touch sensor it is next to. The MIDI-out in this example os polyphonic on/off. Read through the code to see what each section does and edit the parts you need!
+
 import time
 import board
 import touchio
