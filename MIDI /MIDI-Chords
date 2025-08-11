@@ -8,8 +8,6 @@ from adafruit_midi.note_on import NoteOn
 from adafruit_midi.note_off import NoteOff
 import neopixel
 from rainbowio import colorwheel
-import adafruit_ssd1327
-
 
 chord_map = [
     [36, 40, 43],   # C2 major (C-E-G)
