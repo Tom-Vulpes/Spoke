@@ -12,7 +12,6 @@ from adafruit_midi.note_on import NoteOn
 from adafruit_midi.note_off import NoteOff
 import neopixel
 from rainbowio import colorwheel
-import adafruit_ssd1327
 
 
 # MIDI note numbers corresponding to each touch pin
