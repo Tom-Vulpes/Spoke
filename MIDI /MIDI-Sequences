@@ -8,8 +8,6 @@ from adafruit_midi.note_on import NoteOn
 from adafruit_midi.note_off import NoteOff
 import neopixel
 from rainbowio import colorwheel
-import adafruit_ssd1327
-
 
 # MIDI note numbers corresponding to each touch pin
 midi_notes = [98, 96, 93, 91, 88, 86, 84, 81, 79, 76, 74, 72, 69, 67, 64, 62, 60, 57, 55, 52, 50, 48, 45, 43, 40, 38, 36]
