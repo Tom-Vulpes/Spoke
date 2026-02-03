@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MIDI Sample Player</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #1a1a1a;
+            color: #ffffff;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .status {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        
+        .status-item {
+            background: #2a2a2a;
+            padding: 15px 25px;
+            border-radius: 10px;
+            border: 2px solid #3a3a3a;
+        }
+        
+        .status-item.active {
+            border-color: #667eea;
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        .status-label {
+            font-size: 0.8em;
+            color: #888;
+            margin-bottom: 5px;
+        }
+        
+        .status-value {
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+        
+        .controls {
+            background: #2a2a2a;
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin: 5px;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        button:disabled {
+            background: #555;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .sample-upload {
+            margin-top: 20px;
+        }
+        
+        .file-input-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+        
+        input[type="file"] {
+            display: none;
+        }
+        
+        .file-label {
+            display: inline-block;
+            background: #3a3a3a;
+            padding: 12px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .file-label:hover {
+            background: #4a4a4a;
+        }
+        
+        .sample-list {
+            margin-top: 15px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px;
+        }
+        
+        .sample-item {
+            background: #3a3a3a;
+            padding: 10px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .sample-name {
+            font-size: 0.9em;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            flex: 1;
+        }
+        
+        .sample-note {
+            font-size: 0.8em;
+            color: #888;
+            margin-left: 10px;
+        }
+        
+        .log {
+            background: #2a2a2a;
+            padding: 15px;
+            border-radius: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+        }
+        
+        .log-entry {
+            margin: 3px 0;
+            padding: 3px 0;
+            border-bottom: 1px solid #3a3a3a;
+        }
+        
+        .log-entry:last-child {
+            border-bottom: none;
+        }
+        
+        .midi-activity {
+            color: #667eea;
+        }
+        
+        .error {
+            color: #ff6b6b;
+        }
+        
+        .success {
+            color: #51cf66;
+        }
+        
+        .settings {
+            margin-top: 20px;
+        }
+        
+        .setting-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin: 15px 0;
+        }
+        
+        input[type="range"] {
+            flex: 1;
+            margin: 0 15px;
+        }
+        
+        select {
+            background: #3a3a3a;
+            color: white;
+            border: 1px solid #4a4a4a;
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎹 MIDI Sample Player</h1>
+        </div>
+        
+        <div class="status">
+            <div class="status-item" id="midiStatus">
+                <div class="status-label">MIDI Status</div>
+                <div class="status-value">Disconnected</div>
+            </div>
+            <div class="status-item" id="audioStatus">
+                <div class="status-label">Audio</div>
+                <div class="status-value">Ready</div>
+            </div>
+            <div class="status-item" id="sampleStatus">
+                <div class="status-label">Samples Loaded</div>
+                <div class="status-value">0</div>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button id="connectMidi">Connect MIDI Device</button>
+            <button id="testSound">Test Sound (Middle C)</button>
+            
+            <div class="sample-upload">
+                <p style="margin-bottom: 15px; font-size: 0.9em; color: #888;">
+                    Samples will load automatically from the GitHub repository.
+                </p>
+                <button id="loadSamples">Load Samples from GitHub</button>
+                <div id="loadingStatus" style="margin-top: 10px; font-size: 0.9em; color: #667eea;"></div>
+            </div>
+            
+            <div class="sample-list" id="sampleList"></div>
+            
+            <div class="settings">
+                <h3 style="margin-bottom: 15px;">Settings</h3>
+                <div class="setting-row">
+                    <label>Master Volume:</label>
+                    <input type="range" id="masterVolume" min="0" max="100" value="80">
+                    <span id="volumeValue">80%</span>
+                </div>
+                <div class="setting-row">
+                    <label>MIDI Channel:</label>
+                    <select id="midiChannel">
+                        <option value="-1">All Channels</option>
+                        <option value="0">Channel 1</option>
+                        <option value="1">Channel 2</option>
+                        <option value="2">Channel 3</option>
+                        <option value="3">Channel 4</option>
+                        <option value="4">Channel 5</option>
+                        <option value="5">Channel 6</option>
+                        <option value="6">Channel 7</option>
+                        <option value="7">Channel 8</option>
+                        <option value="8">Channel 9</option>
+                        <option value="9">Channel 10</option>
+                        <option value="10">Channel 11</option>
+                        <option value="11">Channel 12</option>
+                        <option value="12">Channel 13</option>
+                        <option value="13">Channel 14</option>
+                        <option value="14">Channel 15</option>
+                        <option value="15">Channel 16</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        
+        <div class="log" id="log">
+            <div class="log-entry">System ready. Connect a MIDI device to begin.</div>
+        </div>
+    </div>
+
+    <script>
+        // Audio context and sample management
+        let audioContext;
+        let masterGain;
+        const samples = new Map(); // Map note number to AudioBuffer
+        const activeSources = new Map(); // Track active notes for polyphony
+        let midiAccess = null;
+        let selectedChannel = -1; // -1 means all channels
+        
+        // Initialize audio context on user interaction
+        function initAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                masterGain = audioContext.createGain();
+                masterGain.gain.value = 0.8;
+                masterGain.connect(audioContext.destination);
+                log('Audio context initialized', 'success');
+            }
+        }
+        
+        // Logging function
+        function log(message, type = '') {
+            const logDiv = document.getElementById('log');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            const timestamp = new Date().toLocaleTimeString();
+            entry.textContent = `[${timestamp}] ${message}`;
+            logDiv.insertBefore(entry, logDiv.firstChild);
+            
+            // Keep only last 50 entries
+            while (logDiv.children.length > 50) {
+                logDiv.removeChild(logDiv.lastChild);
+            }
+        }
+        
+        // Update status displays
+        function updateStatus(statusId, value, active = false) {
+            const statusDiv = document.getElementById(statusId);
+            statusDiv.querySelector('.status-value').textContent = value;
+            if (active) {
+                statusDiv.classList.add('active');
+            } else {
+                statusDiv.classList.remove('active');
+            }
+        }
+        
+        // Load audio file as sample
+        async function loadSample(file, noteNumber) {
+            initAudio();
+            
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+                samples.set(noteNumber, audioBuffer);
+                log(`Loaded: ${file.name} → Note ${noteNumber} (${getMidiNoteName(noteNumber)})`, 'success');
+                return true;
+            } catch (error) {
+                log(`Error loading ${file.name}: ${error.message}`, 'error');
+                return false;
+            }
+        }
+        
+        // Get MIDI note name
+        function getMidiNoteName(noteNumber) {
+            const notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+            const octave = Math.floor(noteNumber / 12) - 1;
+            const noteName = notes[noteNumber % 12];
+            return `${noteName}${octave}`;
+        }
+        
+        // Play sample
+        function playSample(noteNumber, velocity = 127) {
+            if (!samples.has(noteNumber)) {
+                return;
+            }
+            
+            initAudio();
+            
+            // Stop any existing note with the same number (monophonic per note)
+            stopSample(noteNumber);
+            
+            const source = audioContext.createBufferSource();
+            const gainNode = audioContext.createGain();
+            
+            source.buffer = samples.get(noteNumber);
+            
+            // Apply velocity to volume (MIDI velocity 0-127)
+            const velocityGain = velocity / 127;
+            gainNode.gain.value = velocityGain;
+            
+            source.connect(gainNode);
+            gainNode.connect(masterGain);
+            
+            source.start(0);
+            
+            // Store the source and gain node
+            activeSources.set(noteNumber, { source, gainNode });
+            
+            // Clean up when sample ends
+            source.onended = () => {
+                if (activeSources.get(noteNumber)?.source === source) {
+                    activeSources.delete(noteNumber);
+                }
+            };
+        }
+        
+        // Stop sample
+        function stopSample(noteNumber) {
+            if (activeSources.has(noteNumber)) {
+                const { source, gainNode } = activeSources.get(noteNumber);
+                
+                // Quick fade out to avoid clicks
+                const now = audioContext.currentTime;
+                gainNode.gain.setValueAtTime(gainNode.gain.value, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.02);
+                
+                source.stop(now + 0.02);
+                activeSources.delete(noteNumber);
+            }
+        }
+        
+        // Handle MIDI message
+        function handleMIDIMessage(message) {
+            const [status, note, velocity] = message.data;
+            const command = status & 0xf0;
+            const channel = status & 0x0f;
+            
+            // Filter by channel if one is selected
+            if (selectedChannel !== -1 && channel !== selectedChannel) {
+                return;
+            }
+            
+            if (command === 0x90 && velocity > 0) {
+                // Note On
+                log(`Note ON: ${getMidiNoteName(note)} (${note}) vel: ${velocity}`, 'midi-activity');
+                playSample(note, velocity);
+            } else if (command === 0x80 || (command === 0x90 && velocity === 0)) {
+                // Note Off
+                log(`Note OFF: ${getMidiNoteName(note)} (${note})`, 'midi-activity');
+                stopSample(note);
+            }
+        }
+        
+        // Connect to MIDI device
+        async function connectMIDI() {
+            try {
+                midiAccess = await navigator.requestMIDIAccess();
+                log('MIDI access granted', 'success');
+                
+                const inputs = Array.from(midiAccess.inputs.values());
+                
+                if (inputs.length === 0) {
+                    log('No MIDI devices found', 'error');
+                    updateStatus('midiStatus', 'No Devices');
+                    return;
+                }
+                
+                // Connect to all MIDI inputs
+                inputs.forEach(input => {
+                    input.onmidimessage = handleMIDIMessage;
+                    log(`Connected to: ${input.name}`, 'success');
+                });
+                
+                updateStatus('midiStatus', `${inputs.length} Device(s)`, true);
+                
+                // Handle device changes
+                midiAccess.onstatechange = (event) => {
+                    if (event.port.type === 'input') {
+                        if (event.port.state === 'connected') {
+                            event.port.onmidimessage = handleMIDIMessage;
+                            log(`MIDI device connected: ${event.port.name}`, 'success');
+                        } else {
+                            log(`MIDI device disconnected: ${event.port.name}`, 'error');
+                        }
+                        
+                        const currentInputs = Array.from(midiAccess.inputs.values());
+                        updateStatus('midiStatus', `${currentInputs.length} Device(s)`, currentInputs.length > 0);
+                    }
+                };
+                
+            } catch (error) {
+                log(`MIDI Error: ${error.message}`, 'error');
+                updateStatus('midiStatus', 'Error');
+            }
+        }
+        
+        // Configuration - Update these URLs to point to your GitHub-hosted samples
+        const SAMPLE_CONFIG = [
+            // Example format - replace with your actual file URLs:
+            // { url: 'https://raw.githubusercontent.com/yourusername/yourrepo/main/samples/C3.wav', note: 60 },
+            // { url: 'https://raw.githubusercontent.com/yourusername/yourrepo/main/samples/C#3.wav', note: 61 },
+            // { url: 'https://raw.githubusercontent.com/yourusername/yourrepo/main/samples/D3.wav', note: 62 },
+            // Add more samples here...
+        ];
+        
+        // Load sample from URL
+        async function loadSampleFromURL(url, noteNumber) {
+            initAudio();
+            
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const arrayBuffer = await response.arrayBuffer();
+                const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+                samples.set(noteNumber, audioBuffer);
+                
+                const fileName = url.split('/').pop();
+                log(`Loaded: ${fileName} → Note ${noteNumber} (${getMidiNoteName(noteNumber)})`, 'success');
+                return true;
+            } catch (error) {
+                log(`Error loading from ${url}: ${error.message}`, 'error');
+                return false;
+            }
+        }
+        
+        // Load all samples from GitHub
+        async function loadAllSamples() {
+            if (SAMPLE_CONFIG.length === 0) {
+                log('No samples configured. Please add sample URLs to SAMPLE_CONFIG.', 'error');
+                document.getElementById('loadingStatus').textContent = '⚠️ No samples configured';
+                return;
+            }
+            
+            document.getElementById('loadingStatus').textContent = 'Loading samples...';
+            log(`Loading ${SAMPLE_CONFIG.length} samples from GitHub...`);
+            
+            let loadedCount = 0;
+            
+            for (const config of SAMPLE_CONFIG) {
+                if (await loadSampleFromURL(config.url, config.note)) {
+                    loadedCount++;
+                }
+                document.getElementById('loadingStatus').textContent = 
+                    `Loading... ${loadedCount}/${SAMPLE_CONFIG.length}`;
+            }
+            
+            updateSampleList();
+            updateStatus('sampleStatus', samples.size);
+            log(`Successfully loaded ${loadedCount} of ${SAMPLE_CONFIG.length} samples`, 'success');
+            document.getElementById('loadingStatus').textContent = 
+                `✓ Loaded ${loadedCount} samples`;
+        }
+        
+        // File upload handler (keeping as backup option)
+        // You can remove this section if you only want GitHub loading
+        /*
+        document.getElementById('sampleFile').addEventListener('change', async (e) => {
+            const files = Array.from(e.target.files);
+            if (files.length === 0) return;
+            
+            log(`Loading ${files.length} sample(s)...`);
+            
+            // Start from MIDI note 60 (Middle C)
+            let noteNumber = 60;
+            let loadedCount = 0;
+            
+            for (const file of files) {
+                if (await loadSample(file, noteNumber)) {
+                    loadedCount++;
+                    noteNumber++;
+                }
+            }
+            
+            updateSampleList();
+            updateStatus('sampleStatus', samples.size);
+            log(`Successfully loaded ${loadedCount} of ${files.length} samples`, 'success');
+        });
+        */
+        
+        // Update sample list display
+        function updateSampleList() {
+            const listDiv = document.getElementById('sampleList');
+            listDiv.innerHTML = '';
+            
+            samples.forEach((buffer, noteNumber) => {
+                const item = document.createElement('div');
+                item.className = 'sample-item';
+                item.innerHTML = `
+                    <span class="sample-name">Note ${noteNumber}</span>
+                    <span class="sample-note">${getMidiNoteName(noteNumber)}</span>
+                `;
+                listDiv.appendChild(item);
+            });
+        }
+        
+        // Load samples button
+        document.getElementById('loadSamples').addEventListener('click', loadAllSamples);
+        
+        // Test sound button
+        document.getElementById('testSound').addEventListener('click', () => {
+            initAudio();
+            if (samples.size === 0) {
+                log('No samples loaded. Please upload audio files first.', 'error');
+                return;
+            }
+            
+            // Play the first sample
+            const firstNote = Array.from(samples.keys())[0];
+            log(`Testing sample: ${getMidiNoteName(firstNote)}`, 'midi-activity');
+            playSample(firstNote, 100);
+            
+            setTimeout(() => {
+                stopSample(firstNote);
+            }, 500);
+        });
+        
+        // Connect MIDI button
+        document.getElementById('connectMidi').addEventListener('click', connectMIDI);
+        
+        // Master volume control
+        const volumeSlider = document.getElementById('masterVolume');
+        const volumeValue = document.getElementById('volumeValue');
+        
+        volumeSlider.addEventListener('input', (e) => {
+            const value = e.target.value;
+            volumeValue.textContent = value + '%';
+            if (masterGain) {
+                masterGain.gain.value = value / 100;
+            }
+        });
+        
+        // MIDI channel selector
+        document.getElementById('midiChannel').addEventListener('change', (e) => {
+            selectedChannel = parseInt(e.target.value);
+            if (selectedChannel === -1) {
+                log('Listening to all MIDI channels');
+            } else {
+                log(`Listening to MIDI channel ${selectedChannel + 1}`);
+            }
+        });
+        
+        // Check for Web MIDI API support
+        if (!navigator.requestMIDIAccess) {
+            log('Web MIDI API not supported in this browser', 'error');
+            document.getElementById('connectMidi').disabled = true;
+        }
+        
+        // Check for Web Audio API support
+        if (!window.AudioContext && !window.webkitAudioContext) {
+            log('Web Audio API not supported in this browser', 'error');
+            updateStatus('audioStatus', 'Not Supported');
+        }
+    </script>
+</body>
+</html>
