@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MIDI Sample Player</title>
+    <title>MIDI Drum Machine</title>
     <style>
         * {
             margin: 0;
@@ -13,93 +13,207 @@
         
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #1a1a1a;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
             color: #ffffff;
             padding: 20px;
             min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+        
+        /* Animated background effect */
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: drift 20s linear infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        @keyframes drift {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(50px, 50px); }
         }
         
         .container {
-            max-width: 800px;
+            max-width: 900px;
             margin: 0 auto;
+            position: relative;
+            z-index: 1;
         }
         
         .header {
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 40px;
+            position: relative;
         }
         
         h1 {
-            font-size: 2em;
+            font-size: 3em;
             margin-bottom: 10px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #e94560 0%, #ff6b6b 50%, #ee5a6f 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            font-weight: 900;
+            text-shadow: 0 0 30px rgba(233, 69, 96, 0.3);
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+        
+        .subtitle {
+            font-size: 1.1em;
+            color: #a0a0a0;
+            letter-spacing: 2px;
+            text-transform: uppercase;
         }
         
         .status {
             display: flex;
             gap: 20px;
             justify-content: center;
-            margin-bottom: 30px;
+            margin-bottom: 40px;
             flex-wrap: wrap;
         }
         
         .status-item {
-            background: #2a2a2a;
-            padding: 15px 25px;
-            border-radius: 10px;
-            border: 2px solid #3a3a3a;
+            background: rgba(30, 30, 50, 0.8);
+            padding: 20px 30px;
+            border-radius: 15px;
+            border: 2px solid #2a2a4a;
+            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .status-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(233, 69, 96, 0.1), transparent);
+            transition: left 0.5s ease;
+        }
+        
+        .status-item:hover::before {
+            left: 100%;
         }
         
         .status-item.active {
-            border-color: #667eea;
-            box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
+            border-color: #e94560;
+            box-shadow: 0 0 30px rgba(233, 69, 96, 0.4), inset 0 0 20px rgba(233, 69, 96, 0.1);
+            transform: translateY(-2px);
+        }
+        
+        .status-item.active::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #e94560, transparent);
+            animation: scanline 2s linear infinite;
+        }
+        
+        @keyframes scanline {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
         }
         
         .status-label {
-            font-size: 0.8em;
+            font-size: 0.75em;
             color: #888;
-            margin-bottom: 5px;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
         
         .status-value {
-            font-size: 1.2em;
+            font-size: 1.4em;
             font-weight: bold;
+            color: #ffffff;
+        }
+        
+        .status-item.active .status-value {
+            color: #e94560;
+            text-shadow: 0 0 10px rgba(233, 69, 96, 0.5);
         }
         
         .controls {
-            background: #2a2a2a;
-            padding: 25px;
-            border-radius: 15px;
-            margin-bottom: 20px;
+            background: rgba(30, 30, 50, 0.9);
+            padding: 30px;
+            border-radius: 20px;
+            margin-bottom: 25px;
+            border: 2px solid #2a2a4a;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
         }
         
         button {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #e94560 0%, #ff6b6b 100%);
             color: white;
             border: none;
-            padding: 12px 30px;
-            border-radius: 8px;
+            padding: 14px 35px;
+            border-radius: 10px;
             font-size: 1em;
+            font-weight: 600;
             cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
+            transition: all 0.3s ease;
             margin: 5px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 5px 15px rgba(233, 69, 96, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        button::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+        
+        button:hover::before {
+            width: 300px;
+            height: 300px;
         }
         
         button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(233, 69, 96, 0.5);
         }
         
         button:active {
-            transform: translateY(0);
+            transform: translateY(-1px);
         }
         
         button:disabled {
             background: #555;
             cursor: not-allowed;
             transform: none;
+            box-shadow: none;
         }
         
         .sample-upload {
@@ -129,49 +243,104 @@
         }
         
         .sample-list {
-            margin-top: 15px;
+            margin-top: 20px;
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 10px;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 15px;
         }
         
         .sample-item {
-            background: #3a3a3a;
-            padding: 10px;
-            border-radius: 8px;
+            background: linear-gradient(135deg, rgba(233, 69, 96, 0.1) 0%, rgba(15, 52, 96, 0.2) 100%);
+            padding: 15px;
+            border-radius: 12px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            border: 1px solid rgba(233, 69, 96, 0.3);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .sample-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: linear-gradient(180deg, #e94560, #ff6b6b);
+            box-shadow: 0 0 10px rgba(233, 69, 96, 0.5);
+        }
+        
+        .sample-item:hover {
+            background: linear-gradient(135deg, rgba(233, 69, 96, 0.2) 0%, rgba(15, 52, 96, 0.3) 100%);
+            border-color: #e94560;
+            transform: translateX(5px);
+            box-shadow: 0 5px 20px rgba(233, 69, 96, 0.2);
         }
         
         .sample-name {
-            font-size: 0.9em;
+            font-size: 0.95em;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
             flex: 1;
+            font-weight: 600;
+            color: #ffffff;
         }
         
         .sample-note {
-            font-size: 0.8em;
-            color: #888;
-            margin-left: 10px;
+            font-size: 0.85em;
+            color: #e94560;
+            margin-left: 15px;
+            font-weight: 700;
+            background: rgba(233, 69, 96, 0.1);
+            padding: 4px 10px;
+            border-radius: 6px;
         }
         
         .log {
-            background: #2a2a2a;
-            padding: 15px;
-            border-radius: 10px;
-            max-height: 200px;
+            background: rgba(20, 20, 35, 0.9);
+            padding: 20px;
+            border-radius: 15px;
+            max-height: 250px;
             overflow-y: auto;
             font-family: 'Courier New', monospace;
             font-size: 0.85em;
+            border: 2px solid #2a2a4a;
+            backdrop-filter: blur(10px);
+            box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+        
+        .log::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .log::-webkit-scrollbar-track {
+            background: rgba(30, 30, 50, 0.5);
+            border-radius: 10px;
+        }
+        
+        .log::-webkit-scrollbar-thumb {
+            background: #e94560;
+            border-radius: 10px;
+        }
+        
+        .log::-webkit-scrollbar-thumb:hover {
+            background: #ff6b6b;
         }
         
         .log-entry {
-            margin: 3px 0;
-            padding: 3px 0;
-            border-bottom: 1px solid #3a3a3a;
+            margin: 5px 0;
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(233, 69, 96, 0.1);
+            animation: fadeIn 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateX(-10px); }
+            to { opacity: 1; transform: translateX(0); }
         }
         
         .log-entry:last-child {
@@ -179,74 +348,147 @@
         }
         
         .midi-activity {
-            color: #667eea;
+            color: #ff6b6b;
+            font-weight: 600;
         }
         
         .error {
-            color: #ff6b6b;
+            color: #ff4757;
+            font-weight: 600;
         }
         
         .success {
-            color: #51cf66;
+            color: #2ed573;
+            font-weight: 600;
         }
         
         .settings {
-            margin-top: 20px;
+            margin-top: 25px;
+            padding-top: 25px;
+            border-top: 2px solid rgba(233, 69, 96, 0.2);
+        }
+        
+        .settings h3 {
+            color: #e94560;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-size: 1.1em;
         }
         
         .setting-row {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin: 15px 0;
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(15, 52, 96, 0.2);
+            border-radius: 10px;
+            border: 1px solid rgba(233, 69, 96, 0.2);
+        }
+        
+        .setting-row label {
+            font-weight: 600;
+            color: #ffffff;
+            text-transform: uppercase;
+            font-size: 0.9em;
+            letter-spacing: 1px;
         }
         
         input[type="range"] {
             flex: 1;
-            margin: 0 15px;
+            margin: 0 20px;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 6px;
+            border-radius: 5px;
+            background: rgba(233, 69, 96, 0.2);
+            outline: none;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #e94560, #ff6b6b);
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(233, 69, 96, 0.5);
+            transition: all 0.3s ease;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 0 15px rgba(233, 69, 96, 0.8);
+        }
+        
+        input[type="range"]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #e94560, #ff6b6b);
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 0 10px rgba(233, 69, 96, 0.5);
         }
         
         select {
-            background: #3a3a3a;
+            background: rgba(15, 52, 96, 0.4);
             color: white;
-            border: 1px solid #4a4a4a;
-            padding: 8px 12px;
-            border-radius: 5px;
+            border: 2px solid rgba(233, 69, 96, 0.3);
+            padding: 10px 15px;
+            border-radius: 8px;
             font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+        
+        select:hover {
+            border-color: #e94560;
+            box-shadow: 0 0 15px rgba(233, 69, 96, 0.3);
+        }
+        
+        select:focus {
+            outline: none;
+            border-color: #e94560;
+            box-shadow: 0 0 20px rgba(233, 69, 96, 0.4);
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>🎹 MIDI Sample Player</h1>
+            <h1>🥁 MIDI DRUM MACHINE</h1>
+            <div class="subtitle">Web MIDI Pattern Trigger</div>
         </div>
         
         <div class="status">
             <div class="status-item" id="midiStatus">
-                <div class="status-label">MIDI Status</div>
+                <div class="status-label">MIDI Controller</div>
                 <div class="status-value">Disconnected</div>
             </div>
             <div class="status-item" id="audioStatus">
-                <div class="status-label">Audio</div>
+                <div class="status-label">Audio Engine</div>
                 <div class="status-value">Ready</div>
             </div>
             <div class="status-item" id="sampleStatus">
-                <div class="status-label">Samples Loaded</div>
+                <div class="status-label">Patterns Loaded</div>
                 <div class="status-value">0</div>
             </div>
         </div>
         
         <div class="controls">
-            <button id="connectMidi">Connect MIDI Device</button>
-            <button id="testSound">Test Sound (Middle C)</button>
+            <button id="connectMidi">🎛️ Connect MIDI Controller</button>
+            <button id="testSound">▶️ Test Pattern (C3)</button>
             
             <div class="sample-upload">
-                <p style="margin-bottom: 15px; font-size: 0.9em; color: #888;">
-                    Samples will load automatically from the GitHub repository.
+                <p style="margin-bottom: 15px; font-size: 0.9em; color: #a0a0a0;">
+                    Drum patterns will load automatically from your GitHub repository.
                 </p>
-                <button id="loadSamples">Load Samples from GitHub</button>
-                <div id="loadingStatus" style="margin-top: 10px; font-size: 0.9em; color: #667eea;"></div>
+                <button id="loadSamples">📦 Load Drum Patterns</button>
+                <div id="loadingStatus" style="margin-top: 10px; font-size: 0.9em; color: #e94560;"></div>
             </div>
             
             <div class="sample-list" id="sampleList"></div>
@@ -284,7 +526,7 @@
         </div>
         
         <div class="log" id="log">
-            <div class="log-entry">System ready. Connect a MIDI device to begin.</div>
+            <div class="log-entry">🥁 Drum machine ready. Connect your MIDI controller to start triggering patterns.</div>
         </div>
     </div>
 
@@ -474,14 +716,33 @@
             }
         }
         
-        // Configuration - Update these URLs to point to your GitHub-hosted samples
-        const SAMPLE_CONFIG = [
-            // Example format - replace with your actual file URLs:
-            // { url: 'https://raw.githubusercontent.com/yourusername/yourrepo/main/samples/C3.wav', note: 60 },
-            // { url: 'https://raw.githubusercontent.com/yourusername/yourrepo/main/samples/C#3.wav', note: 61 },
-            // { url: 'https://raw.githubusercontent.com/yourusername/yourrepo/main/samples/D3.wav', note: 62 },
-            // Add more samples here...
-        ];
+        // Configuration - Update these settings for your GitHub repository
+        const GITHUB_CONFIG = {
+            username: 'yourusername',        // Your GitHub username
+            repo: 'midi-sampler',            // Your repository name
+            branch: 'main',                  // Branch name (usually 'main')
+            samplesFolder: 'samples',        // Folder where samples are stored
+            startingNote: 60,                // MIDI note number to start from (60 = Middle C)
+            numberOfSamples: 12              // How many sample files you have (1.wav, 2.wav, etc.)
+        };
+        
+        // Auto-generate sample configuration from numbered files
+        function generateSampleConfig() {
+            const samples = [];
+            const baseUrl = `https://raw.githubusercontent.com/${GITHUB_CONFIG.username}/${GITHUB_CONFIG.repo}/${GITHUB_CONFIG.branch}/${GITHUB_CONFIG.samplesFolder}`;
+            
+            for (let i = 1; i <= GITHUB_CONFIG.numberOfSamples; i++) {
+                samples.push({
+                    url: `${baseUrl}/${i}.wav`,
+                    note: GITHUB_CONFIG.startingNote + (i - 1)
+                });
+            }
+            
+            return samples;
+        }
+        
+        // Generate the sample configuration
+        const SAMPLE_CONFIG = generateSampleConfig();
         
         // Load sample from URL
         async function loadSampleFromURL(url, noteNumber) {
@@ -498,7 +759,7 @@
                 samples.set(noteNumber, audioBuffer);
                 
                 const fileName = url.split('/').pop();
-                log(`Loaded: ${fileName} → Note ${noteNumber} (${getMidiNoteName(noteNumber)})`, 'success');
+                log(`Loaded: ${fileName} → Pattern ${noteNumber} (${getMidiNoteName(noteNumber)})`, 'success');
                 return true;
             } catch (error) {
                 log(`Error loading from ${url}: ${error.message}`, 'error');
@@ -509,13 +770,13 @@
         // Load all samples from GitHub
         async function loadAllSamples() {
             if (SAMPLE_CONFIG.length === 0) {
-                log('No samples configured. Please add sample URLs to SAMPLE_CONFIG.', 'error');
-                document.getElementById('loadingStatus').textContent = '⚠️ No samples configured';
+                log('No patterns configured. Please add pattern URLs to SAMPLE_CONFIG.', 'error');
+                document.getElementById('loadingStatus').textContent = '⚠️ No patterns configured';
                 return;
             }
             
-            document.getElementById('loadingStatus').textContent = 'Loading samples...';
-            log(`Loading ${SAMPLE_CONFIG.length} samples from GitHub...`);
+            document.getElementById('loadingStatus').textContent = 'Loading drum patterns...';
+            log(`Loading ${SAMPLE_CONFIG.length} drum patterns from GitHub...`);
             
             let loadedCount = 0;
             
@@ -529,9 +790,9 @@
             
             updateSampleList();
             updateStatus('sampleStatus', samples.size);
-            log(`Successfully loaded ${loadedCount} of ${SAMPLE_CONFIG.length} samples`, 'success');
+            log(`Successfully loaded ${loadedCount} of ${SAMPLE_CONFIG.length} drum patterns`, 'success');
             document.getElementById('loadingStatus').textContent = 
-                `✓ Loaded ${loadedCount} samples`;
+                `✓ Loaded ${loadedCount} patterns`;
         }
         
         // File upload handler (keeping as backup option)
@@ -569,7 +830,7 @@
                 const item = document.createElement('div');
                 item.className = 'sample-item';
                 item.innerHTML = `
-                    <span class="sample-name">Note ${noteNumber}</span>
+                    <span class="sample-name">Pattern ${noteNumber}</span>
                     <span class="sample-note">${getMidiNoteName(noteNumber)}</span>
                 `;
                 listDiv.appendChild(item);
@@ -583,13 +844,13 @@
         document.getElementById('testSound').addEventListener('click', () => {
             initAudio();
             if (samples.size === 0) {
-                log('No samples loaded. Please upload audio files first.', 'error');
+                log('No patterns loaded. Please load drum patterns first.', 'error');
                 return;
             }
             
             // Play the first sample
             const firstNote = Array.from(samples.keys())[0];
-            log(`Testing sample: ${getMidiNoteName(firstNote)}`, 'midi-activity');
+            log(`Testing pattern: ${getMidiNoteName(firstNote)}`, 'midi-activity');
             playSample(firstNote, 100);
             
             setTimeout(() => {
